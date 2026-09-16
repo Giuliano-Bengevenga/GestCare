@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1d4ed8">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <title>GestCare - Gestação</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/pwa.js" defer></script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <%- include('partials/sidebar', { user: user, activePage: 'gestacao' }) %>
+
+        <main>
+            <header class="header">
+                <div>
+                    <h1>Acompanhamento da gestante</h1>
+                    <p>Resumo da gestação com informações importantes para acompanhamento.</p>
+                </div>
+                <div class="usuario">
+                    <span class="avatar" aria-hidden="true"><%= (user.name || 'U').trim().charAt(0).toUpperCase() %></span>
+                    <span>Olá, <%= user.name %></span>
+                </div>
+            </header>
+
+            <section class="cards">
+                <div class="card-info">
+                    <h3><%= paciente.semanaGestacional %></h3>
+                    <p>Semana gestacional</p>
+                </div>
+                <div class="card-info">
+                    <h3><%= paciente.risco %></h3>
+                    <p>Classificação de risco</p>
+                </div>
+                <div class="card-info">
+                    <h3><%= paciente.idade %></h3>
+                    <p>Idade</p>
+                </div>
+                <div class="card-info">
+                    <h3><%= paciente.proximaConsulta %></h3>
+                    <p>Próxima consulta</p>
+                </div>
+            </section>
+
+            <section class="registro-prenatal">
+                <div class="dados-gestante">
+                    <h2>Novo registro pré-natal</h2>
+                    <p class="subtitle">Registre as medidas da consulta para esta gestação.</p>
+
+                    <% if (error) { %>
+                        <div class="alert error"><%= error %></div>
+                    <% } %>
+
+                    <% if (success) { %>
+                        <div class="alert success"><%= success %></div>
+                    <% } %>
+
+                    <form class="prenatal-form" method="POST" action="/gestacao">
+                        <label for="pesoAtual">Peso atual (kg)</label>
+                        <input type="number" id="pesoAtual" name="pesoAtual" min="0.01" max="999.99" step="0.01" required>
+
+                        <div class="form-grid">
+                            <div>
+                                <label for="pressaoSistolica">Pressão sistólica</label>
+                                <input type="number" id="pressaoSistolica" name="pressaoSistolica" min="1" max="300" required>
+                            </div>
+                            <div>
+                                <label for="pressaoDiastolica">Pressão diastólica</label>
+                                <input type="number" id="pressaoDiastolica" name="pressaoDiastolica" min="1" max="250" required>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div>
+                                <label for="classificacaoRiscoAtual">Classificação da avaliação de risco</label>
+                                <input class="risk-classification-input" type="text" id="classificacaoRiscoAtual" value="<%= paciente.risco %>" readonly aria-readonly="true">
+                            </div>
+                        </div>
+
+                        <button type="submit">Salvar registro</button>
+                    </form>
+                </div>
+            </section>
+
+            <section class="dashboard">
+                <div class="dados-gestante">
+                    <h2>Detalhes da paciente</h2>
+                    <table class="table">
+                        <tr>
+                            <th>Nome</th>
+                            <td><%= paciente.nome %></td>
+                        </tr>
+                        <tr>
+                            <th>CPF</th>
+                            <td><%= paciente.cpf %></td>
+                        </tr>
+                        <tr>
+                            <th>Data de nascimento</th>
+                            <td><%= paciente.dataNascimento %></td>
+                        </tr>
+                        <tr>
+                            <th>Data da última menstruação</th>
+                            <td><%= paciente.dum %></td>
+                        </tr>
+                        <tr>
+                            <th>Idade</th>
+                            <td><%= paciente.idade %></td>
+                        </tr>
+                        <tr>
+                            <th>Semana gestacional</th>
+                            <td><%= paciente.semanaGestacional %></td>
+                        </tr>
+                        <tr>
+                            <th>Pressão arterial</th>
+                            <td><%= paciente.pressao %></td>
+                        </tr>
+                        <tr>
+                            <th>Peso</th>
+                            <td><%= paciente.peso %></td>
+                        </tr>
+                        <tr>
+                            <th>Altura</th>
+                            <td><%= paciente.altura %></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="classificacao">
+                    <h2>Recomendações</h2>
+                    <div class="risco <%= paciente.riscoClasse %>"><%= paciente.risco %></div>
+                    <h3 class="risk-reasons-title">Motivos da classificação</h3>
+                    <ul class="risk-reasons">
+                        <% paciente.motivosRisco.forEach(function(motivo) { %>
+                            <li><%= motivo %></li>
+                        <% }) %>
+                    </ul>
+                    <h3 class="risk-reasons-title">Cuidados recomendados</h3>
+                    <ul>
+                        <% paciente.recomendacoes.forEach(function(item) { %>
+                            <li><%= item %></li>
+                        <% }) %>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="dados-gestante historico-registros">
+                <h2>Histórico de registros</h2>
+
+                <% if (acompanhamentos.length) { %>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Peso</th>
+                                    <th>Pressão</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% acompanhamentos.forEach(function(registro) { %>
+                                    <tr>
+                                        <td><%= registro.dataRegistro %></td>
+                                        <td><%= registro.peso_atual %> kg</td>
+                                        <td><%= registro.pressao_sistolica %>/<%= registro.pressao_diastolica %> mmHg</td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <p class="subtitle">Ainda não há registros pré-natais para esta gestação.</p>
+                <% } %>
+            </section>
+
+            <section class="informacoes">
+                <div class="consultas">
+                    <h2>Cuidados recomendados</h2>
+                    <div class="alert alert-info">Acompanhar evolução da gestação e manter exames em dia.</div>
+                    <div class="alert alert-success">Mantenha repouso e siga as orientações médicas.</div>
+                </div>
+
+                <div class="alertas">
+                    <h2>Observações</h2>
+                    <div class="alert alert-warning"><%= paciente.observacoes %></div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+</body>
+</html>

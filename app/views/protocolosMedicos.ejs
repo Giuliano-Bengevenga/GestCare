@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <title>Agenda de protocolos - GestCare</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/pwa.js" defer></script>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('partials/sidebar', { user: user, activePage: 'protocolos' }) %>
+
+      <main>
+        <header class="header">
+          <div>
+            <h1>Próximos protocolos médicos</h1>
+            <p>Agenda de exames e cuidados para <%= nomeGestante %>.</p>
+          </div>
+          <div class="usuario">
+            <span class="avatar" aria-hidden="true"><%= (user.name || 'U').trim().charAt(0).toUpperCase() %></span>
+            <span>Olá, <%= user.name %></span>
+          </div>
+        </header>
+
+        <% if (semanaGestacional === null) { %>
+          <section class="agenda-empty">
+            <h2>Não foi possível calcular a semana gestacional</h2>
+            <p>Informe uma DUM válida no cadastro da gestação para montar a agenda de protocolos.</p>
+            <a class="button-link agenda-link" href="/dados-gestacao">Atualizar dados da gestação</a>
+          </section>
+        <% } else { %>
+          <section class="agenda-summary">
+            <p>Você está na</p>
+            <strong><%= semanaGestacional %>ª semana gestacional</strong>
+            <span>Os itens disponíveis agora aparecem primeiro.</span>
+          </section>
+
+          <% if (error) { %>
+            <div class="alert error"><%= error %></div>
+          <% } %>
+
+          <% if (success) { %>
+            <div class="alert success"><%= success %></div>
+          <% } %>
+
+          <% if (agenda.length) { %>
+            <section class="protocolos-lista" aria-label="Agenda de protocolos médicos">
+              <% agenda.forEach(function(protocolo) { %>
+                <article class="protocolo-card <%= protocolo.emAndamento ? 'disponivel' : 'futuro' %>">
+                  <div class="protocolo-card-header">
+                    <span class="categoria"><%= protocolo.categoria %></span>
+                    <span class="protocolo-status"><%= protocolo.status %></span>
+                  </div>
+                  <h2><%= protocolo.titulo %></h2>
+                  <% if (protocolo.descricao) { %>
+                    <p><%= protocolo.descricao %></p>
+                  <% } %>
+                  <p class="protocolo-periodo">Janela recomendada: da <strong><%= protocolo.semana_inicio %>ª</strong> à <strong><%= protocolo.semana_fim %>ª semana</strong>.</p>
+                  <% if (protocolo.emAndamento) { %>
+                    <form class="protocolo-action" method="POST" action="/protocolos-medicos/<%= protocolo.id_protocolo %>/conclusao">
+                      <input type="hidden" name="acao" value="concluir">
+                      <button class="protocolo-button" type="submit">✓ Marcar como realizado</button>
+                    </form>
+                  <% } else { %>
+                    <p class="protocolo-indisponivel">Este exame poderá ser marcado quando estiver disponível.</p>
+                  <% } %>
+                </article>
+              <% }); %>
+            </section>
+          <% } else { %>
+            <section class="agenda-empty">
+              <h2><%= historico.length ? 'Não há exames pendentes nesta fase' : 'Nenhum protocolo agendado' %></h2>
+              <p><%= historico.length ? 'Os exames realizados e os protocolos anteriores podem ser consultados logo abaixo.' : 'Não há protocolos médicos cadastrados para esta semana ou para as próximas semanas.' %></p>
+            </section>
+          <% } %>
+
+          <% if (historico.length) { %>
+            <details class="protocolos-realizados">
+              <summary>Exames realizados e protocolos anteriores (<%= historico.length %>)</summary>
+              <p class="realizados-intro">Esta lista reúne os exames já realizados e aqueles cujo prazo já terminou. Ela fica recolhida para manter sua agenda atual mais limpa.</p>
+              <section class="protocolos-lista" aria-label="Exames realizados e protocolos anteriores">
+                <% historico.forEach(function(protocolo) { %>
+                  <article class="protocolo-card <%= protocolo.realizado ? 'realizado' : 'encerrado' %>">
+                    <div class="protocolo-card-header">
+                      <span class="categoria"><%= protocolo.categoria %></span>
+                      <span class="protocolo-status"><%= protocolo.status %></span>
+                    </div>
+                    <h2><%= protocolo.titulo %></h2>
+                    <% if (protocolo.descricao) { %>
+                      <p><%= protocolo.descricao %></p>
+                    <% } %>
+                    <p class="protocolo-periodo">Janela recomendada: da <strong><%= protocolo.semana_inicio %>ª</strong> à <strong><%= protocolo.semana_fim %>ª semana</strong>.</p>
+                    <% if (protocolo.podeReabrir) { %>
+                      <form class="protocolo-action" method="POST" action="/protocolos-medicos/<%= protocolo.id_protocolo %>/conclusao">
+                        <input type="hidden" name="acao" value="reabrir">
+                        <button class="protocolo-button reopen-button" type="submit">Reabrir exame</button>
+                      </form>
+                    <% } %>
+                  </article>
+                <% }); %>
+              </section>
+            </details>
+          <% } %>
+        <% } %>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

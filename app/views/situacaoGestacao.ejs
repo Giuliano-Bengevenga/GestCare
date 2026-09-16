@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <title>Situação gestacional - Gestante</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/pwa.js" defer></script>
+</head>
+<body>
+  <main class="login-container">
+    <form class="login-card" method="POST" action="/situacao-gestacao">
+      <h1>Como você deseja continuar?</h1>
+      <p>Olá, <strong><%= user.name %></strong>. Você está gestante?</p>
+
+      <div class="choice-actions">
+        <button type="submit" name="situacao" value="gestante">Estou gestante</button>
+        <button type="submit" name="situacao" value="nao-gestante" class="secondary-button">Não estou gestante</button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

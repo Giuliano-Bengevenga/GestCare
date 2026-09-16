@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <title>Acompanhar gestação - Gestante</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/pwa.js" defer></script>
+</head>
+<body>
+  <main class="login-container">
+    <form class="login-card" method="POST" action="/chave-acesso">
+      <h1>Acompanhar uma gestação</h1>
+      <p>Digite a chave de acesso fornecida pela gestante.</p>
+
+      <% if (error) { %>
+        <div class="alert error"><%= error %></div>
+      <% } %>
+
+      <label for="chaveAcesso">Chave de acesso</label>
+      <input type="text" id="chaveAcesso" name="chaveAcesso" maxlength="32" required placeholder="GEST-XXXXXXXXXXXXXXXXXXXX" value="<%= chaveAcesso || '' %>">
+
+      <button type="submit">Acompanhar gestação</button>
+      <div class="helper-text"><p><a href="/situacao-gestacao">Voltar</a></p></div>
+    </form>
+  </main>
+</body>
+</html>

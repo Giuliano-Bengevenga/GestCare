@@ -1,0 +1,29 @@
+<aside class="sidebar">
+  <a class="brand" href="/" aria-label="GestCare - página inicial">
+    <span class="brand-mark" aria-hidden="true">G</span>
+    <span>
+      <strong>GestCare</strong>
+      <small>Seu cuidado, sempre perto</small>
+    </span>
+  </a>
+
+  <nav class="menu" aria-label="Menu principal">
+    <a class="<%= activePage === 'home' ? 'active' : '' %>" href="/">Início</a>
+
+    <% if (user) { %>
+      <a class="<%= activePage === 'gestacao' ? 'active' : '' %>" href="/gestacao">Minha gestação</a>
+      <a class="<%= activePage === 'avaliacao-risco' ? 'active' : '' %>" href="/avaliacao-risco">Avaliação de risco</a>
+      <a class="<%= activePage === 'protocolos' ? 'active' : '' %>" href="/protocolos-medicos">Agenda de protocolos</a>
+    <% } else { %>
+      <a class="<%= activePage === 'login' ? 'active' : '' %>" href="/login">Entrar</a>
+      <a class="menu-signup <%= activePage === 'cadastro' ? 'active' : '' %>" href="/cadastro">Criar conta</a>
+    <% } %>
+  </nav>
+
+  <% if (user) { %>
+    <div class="sidebar-account">
+      <span class="sidebar-account-name"><%= user.name %></span>
+      <a class="logout-link" href="/logout">Sair</a>
+    </div>
+  <% } %>
+</aside>

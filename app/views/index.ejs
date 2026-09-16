@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1d4ed8">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <title>GestCare - Painel</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/pwa.js" defer></script>
+    <script src="/access-key-copy.js" defer></script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <%- include('partials/sidebar', { user: user, activePage: 'home' }) %>
+
+        <main>
+            <header class="header">
+                <div>
+                    <h1><%= title %></h1>
+                    <p><%= message %></p>
+                </div>
+                <div class="usuario">
+                    <% if (user) { %>
+                        <span class="avatar" aria-hidden="true"><%= (user.name || 'U').trim().charAt(0).toUpperCase() %></span>
+                        <span>Olá, <%= user.name %></span>
+                    <% } else { %>
+                        <span>Bem-vinda ao GestCare</span>
+                    <% } %>
+                </div>
+            </header>
+
+            <% if (user && chaveAcesso) { %>
+                <section class="share-access-card" aria-labelledby="share-access-title">
+                    <div class="share-access-copy">
+                        <span class="share-eyebrow">Acesso compartilhável</span>
+                        <h2 id="share-access-title">Compartilhe a chave da gestação</h2>
+                        <p>Envie esta chave para permitir que outra pessoa acesse o acompanhamento da gestação.</p>
+                    </div>
+
+                    <div class="access-key-field">
+                        <label for="access-key-value">Chave de acesso</label>
+                        <div class="access-key-value">
+                            <code id="access-key-value"><%= chaveAcesso %></code>
+                            <button class="copy-access-key" type="button" data-copy-access-key="<%= chaveAcesso %>" aria-label="Copiar chave de acesso" title="Copiar chave de acesso">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                                    <path d="M8 7V5.75A1.75 1.75 0 0 1 9.75 4h8.5A1.75 1.75 0 0 1 20 5.75v8.5A1.75 1.75 0 0 1 18.25 16H17" />
+                                    <rect x="4" y="8" width="12" height="12" rx="1.75" />
+                                </svg>
+                                <span class="sr-only">Copiar chave</span>
+                            </button>
+                        </div>
+                        <p class="copy-feedback" data-copy-feedback role="status" aria-live="polite"></p>
+                    </div>
+                </section>
+            <% } else if (user) { %>
+                <section class="share-access-card share-access-empty">
+                    <div class="share-access-copy">
+                        <span class="share-eyebrow">Acompanhamento</span>
+                        <h2>Cadastre a gestação para gerar uma chave</h2>
+                        <p>Depois do cadastro, a chave de acesso ficará disponível aqui para você compartilhar.</p>
+                    </div>
+                    <a class="button-link share-access-button" href="/situacao-gestacao">Cadastrar gestação</a>
+                </section>
+            <% } %>
+        </main>
+    </div>
+</div>
+</body>
+</html>
