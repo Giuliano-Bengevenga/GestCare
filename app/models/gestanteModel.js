@@ -31,8 +31,8 @@ async function createGestante({ userId, nome, cpf, dataNascimento, dum }) {
   try {
     await initializeDatabase();
 
-    const [existingUserGestante] = await pool.query(
-      'SELECT id_gestante FROM gestantes WHERE id_usuario = ? LIMIT 1',
+    const { rows: existingUserGestante } = await pool.query(
+      'SELECT id_gestante FROM gestantes WHERE id_usuario = $1 LIMIT 1',
       [userId]
     );
 
@@ -44,16 +44,17 @@ async function createGestante({ userId, nome, cpf, dataNascimento, dum }) {
       const chaveAcesso = gerarChaveAcesso();
 
       try {
-        const [result] = await pool.query(
+        const { rows } = await pool.query(
           `INSERT INTO gestantes
             (id_usuario, nome, cpf, data_nascimento, dum, chave_acesso)
-           VALUES (?, ?, ?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING id_gestante`,
           [userId, nomeNormalizado, cpfNormalizado, dataNascimento, dumNormalizada, chaveAcesso]
         );
 
         return {
           gestante: {
-            id_gestante: result.insertId,
+            id_gestante: rows[0].id_gestante,
             id_usuario: userId,
             nome: nomeNormalizado,
             cpf: cpfNormalizado,
@@ -63,11 +64,11 @@ async function createGestante({ userId, nome, cpf, dataNascimento, dum }) {
           }
         };
       } catch (error) {
-        if (error.code === 'ER_DUP_ENTRY' && error.message.includes('chave_acesso')) {
+        if (error.code === '23505' && String(error.constraint || error.detail || '').includes('chave_acesso')) {
           continue;
         }
 
-        if (error.code === 'ER_DUP_ENTRY' && error.message.includes('cpf')) {
+        if (error.code === '23505' && String(error.constraint || error.detail || '').includes('cpf')) {
           return { error: 'Já existe uma gestação cadastrada para este CPF.' };
         }
 
@@ -91,9 +92,9 @@ async function getGestanteByAccessKey(chaveAcesso) {
 
   try {
     await initializeDatabase();
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT id_gestante, id_usuario, nome, cpf, data_nascimento, dum, chave_acesso, data_cadastro
-       FROM gestantes WHERE chave_acesso = ? LIMIT 1`,
+       FROM gestantes WHERE chave_acesso = $1 LIMIT 1`,
       [chaveNormalizada]
     );
 
@@ -107,9 +108,9 @@ async function getGestanteByAccessKey(chaveAcesso) {
 async function getGestanteById(idGestante) {
   try {
     await initializeDatabase();
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT id_gestante, id_usuario, nome, cpf, data_nascimento, dum, chave_acesso, data_cadastro
-       FROM gestantes WHERE id_gestante = ? LIMIT 1`,
+       FROM gestantes WHERE id_gestante = $1 LIMIT 1`,
       [idGestante]
     );
 
@@ -123,9 +124,9 @@ async function getGestanteById(idGestante) {
 async function getGestanteByUserId(userId) {
   try {
     await initializeDatabase();
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT id_gestante, id_usuario, nome, cpf, data_nascimento, dum, chave_acesso, data_cadastro
-       FROM gestantes WHERE id_usuario = ? LIMIT 1`,
+       FROM gestantes WHERE id_usuario = $1 LIMIT 1`,
       [userId]
     );
 
@@ -177,14 +178,15 @@ async function createAcompanhamento(idGestante, dados, dum) {
 
   try {
     await initializeDatabase();
-    const [result] = await pool.query(
+    const { rows } = await pool.query(
       `INSERT INTO acompanhamento_prenatal
         (id_gestante, semanas_gestacao, peso_atual, pressao_sistolica, pressao_diastolica)
-       VALUES (?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id_acompanhamento`,
       [idGestante, semanasGestacao, pesoAtual, pressaoSistolica, pressaoDiastolica]
     );
 
-    return { id: result.insertId };
+    return { id: rows[0].id_acompanhamento };
   } catch (error) {
     console.warn('Erro ao salvar acompanhamento pré-natal:', error.message);
     return { error: 'Não foi possível salvar o registro agora. Tente novamente.' };
@@ -194,11 +196,11 @@ async function createAcompanhamento(idGestante, dados, dum) {
 async function getAcompanhamentosByGestanteId(idGestante) {
   try {
     await initializeDatabase();
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT id_acompanhamento, id_gestante, data_registro, semanas_gestacao, peso_atual,
               pressao_sistolica, pressao_diastolica
        FROM acompanhamento_prenatal
-       WHERE id_gestante = ?
+       WHERE id_gestante = $1
        ORDER BY data_registro DESC, id_acompanhamento DESC`,
       [idGestante]
     );
@@ -213,14 +215,14 @@ async function getAcompanhamentosByGestanteId(idGestante) {
 async function getUltimaAvaliacaoRiscoByGestanteId(idGestante) {
   try {
     await initializeDatabase();
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT id_avaliacao, id_gestante, data_avaliacao, classificacao,
               gestacao_multipla, possui_doenca_cronica, complicacao_atual,
               complicacao_anterior, uso_substancias, medicamento_sem_orientacao,
               sangramento, perda_liquido, dor_abdominal_forte, sintomas_pressao_alta,
               sintoma_grave, movimentos_reduzidos, febre
        FROM avaliacao_risco
-       WHERE id_gestante = ?
+       WHERE id_gestante = $1
        ORDER BY data_avaliacao DESC, id_avaliacao DESC
        LIMIT 1`,
       [idGestante]
@@ -240,12 +242,12 @@ async function getProtocolosMedicosPorSemana(semanaGestacional) {
 
   try {
     await initializeDatabase();
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT id_protocolo, categoria, titulo, descricao, semana_inicio, semana_fim
        FROM protocolos_medicos
-       WHERE semana_fim >= ?
+       WHERE semana_fim >= $1
        ORDER BY
-         CASE WHEN semana_inicio <= ? THEN 0 ELSE 1 END,
+         CASE WHEN semana_inicio <= $2 THEN 0 ELSE 1 END,
          semana_inicio ASC,
          semana_fim ASC,
          titulo ASC`,
@@ -266,10 +268,10 @@ async function getProtocolosMedicosAnterioresPorSemana(semanaGestacional) {
 
   try {
     await initializeDatabase();
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT id_protocolo, categoria, titulo, descricao, semana_inicio, semana_fim
        FROM protocolos_medicos
-       WHERE semana_fim < ?
+       WHERE semana_fim < $1
        ORDER BY semana_fim DESC, semana_inicio DESC, titulo ASC`,
       [semanaGestacional]
     );
@@ -284,12 +286,12 @@ async function getProtocolosMedicosAnterioresPorSemana(semanaGestacional) {
 async function getProtocolosRealizadosByGestanteId(idGestante) {
   try {
     await initializeDatabase();
-    const [rows] = await pool.query(
+    const { rows } = await pool.query(
       `SELECT pr.id_protocolo, pr.concluido_em, p.categoria, p.titulo, p.descricao,
               p.semana_inicio, p.semana_fim
        FROM protocolos_realizados pr
        INNER JOIN protocolos_medicos p ON p.id_protocolo = pr.id_protocolo
-       WHERE pr.id_gestante = ?
+       WHERE pr.id_gestante = $1
        ORDER BY pr.concluido_em DESC, p.titulo ASC`,
       [idGestante]
     );
@@ -306,8 +308,8 @@ async function marcarProtocoloComoRealizado(idGestante, idProtocolo) {
     await initializeDatabase();
     await pool.query(
       `INSERT INTO protocolos_realizados (id_gestante, id_protocolo)
-       VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE concluido_em = concluido_em`,
+       VALUES ($1, $2)
+       ON CONFLICT (id_gestante, id_protocolo) DO NOTHING`,
       [idGestante, idProtocolo]
     );
 
@@ -321,12 +323,12 @@ async function marcarProtocoloComoRealizado(idGestante, idProtocolo) {
 async function desmarcarProtocoloComoRealizado(idGestante, idProtocolo) {
   try {
     await initializeDatabase();
-    const [result] = await pool.query(
-      'DELETE FROM protocolos_realizados WHERE id_gestante = ? AND id_protocolo = ?',
+    const result = await pool.query(
+      'DELETE FROM protocolos_realizados WHERE id_gestante = $1 AND id_protocolo = $2',
       [idGestante, idProtocolo]
     );
 
-    return result.affectedRows > 0;
+    return result.rowCount > 0;
   } catch (error) {
     console.warn('Erro ao reabrir protocolo realizado:', error.message);
     return false;
@@ -424,13 +426,14 @@ async function createAvaliacaoRisco(idGestante, dados) {
 
   try {
     await initializeDatabase();
-    const [result] = await pool.query(
+    const { rows } = await pool.query(
       `INSERT INTO avaliacao_risco (
         id_gestante, gestacao_multipla, possui_doenca_cronica, complicacao_atual,
         complicacao_anterior, uso_substancias, medicamento_sem_orientacao,
         sangramento, perda_liquido, dor_abdominal_forte, sintomas_pressao_alta,
         sintoma_grave, movimentos_reduzidos, febre, classificacao
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      RETURNING id_avaliacao`,
       [
         idGestante,
         respostas.gestacaoMultipla,
@@ -450,7 +453,7 @@ async function createAvaliacaoRisco(idGestante, dados) {
       ]
     );
 
-    return { id: result.insertId, classificacao };
+    return { id: rows[0].id_avaliacao, classificacao };
   } catch (error) {
     console.warn('Erro ao salvar avaliação de risco:', error.message);
     return { error: 'Não foi possível salvar a avaliação de risco agora. Tente novamente.' };

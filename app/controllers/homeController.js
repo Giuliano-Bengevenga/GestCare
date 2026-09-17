@@ -78,6 +78,14 @@ function classeVisualRisco(classificacao) {
 }
 
 function lerRespostasMultiplas(valor) {
+  if (Array.isArray(valor)) {
+    return valor;
+  }
+
+  if (typeof valor !== 'string') {
+    return [];
+  }
+
   try {
     const respostas = JSON.parse(valor);
     return Array.isArray(respostas) ? respostas : [];
