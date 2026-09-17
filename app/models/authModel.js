@@ -2,18 +2,18 @@ const { Pool } = require('pg');
 
 require('dotenv').config();
 
-const usarSsl = process.env.DB_SSL === 'true' || process.env.DB_SSLMODE === 'require';
+const usarSsl = process.env.DB_SSL === 'true' || process.env.DB_SSLMODE === 'require' || process.env.PGSSLMODE === 'require';
 const configuracaoPool = process.env.DATABASE_URL
   ? {
     connectionString: process.env.DATABASE_URL,
     ssl: usarSsl ? { rejectUnauthorized: false } : undefined
   }
   : {
-    host: process.env.DB_HOST || 'localhost',
-    port: Number(process.env.DB_PORT) || 5432,
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'gest_db_wig7',
+    host: process.env.DB_HOST || process.env.PGHOST || 'localhost',
+    port: Number(process.env.DB_PORT || process.env.PGPORT) || 5432,
+    user: process.env.DB_USER || process.env.PGUSER || 'postgres',
+    password: process.env.DB_PASSWORD || process.env.PGPASSWORD || '',
+    database: process.env.DB_NAME || process.env.PGDATABASE || 'gest_db_wig7',
     ssl: usarSsl ? { rejectUnauthorized: false } : undefined
   };
 
