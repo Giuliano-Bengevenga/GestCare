@@ -13,7 +13,7 @@ const configuracaoPool = process.env.DATABASE_URL
     port: Number(process.env.DB_PORT) || 5432,
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'gestante_db',
+    database: process.env.DB_NAME || 'gest_db_wig7',
     ssl: usarSsl ? { rejectUnauthorized: false } : undefined
   };
 
