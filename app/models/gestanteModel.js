@@ -220,7 +220,7 @@ async function getUltimaAvaliacaoRiscoByGestanteId(idGestante) {
               gestacao_multipla, possui_doenca_cronica, complicacao_atual,
               complicacao_anterior, uso_substancias, medicamento_sem_orientacao,
               sangramento, perda_liquido, dor_abdominal_forte, sintomas_pressao_alta,
-              sintoma_grave, movimentos_reduzidos, febre
+              sintoma_grave, movimentos_reduzidos, febre, recomendacoes
        FROM avaliacao_risco
        WHERE id_gestante = $1
        ORDER BY data_avaliacao DESC, id_avaliacao DESC
@@ -388,6 +388,81 @@ function classificarAvaliacaoRisco(respostas) {
   return temFatorDeRisco ? 'Atenção necessária' : 'Baixo risco';
 }
 
+function adicionarRecomendacao(recomendacoes, recomendacao) {
+  if (!recomendacoes.includes(recomendacao)) {
+    recomendacoes.push(recomendacao);
+  }
+}
+
+function gerarRecomendacoesAvaliacaoRisco(respostas) {
+  const recomendacoes = [];
+  const temDiabetes = respostas.condicoesSaude.includes('Diabetes') ||
+    respostas.condicoesAtuais.includes('Diabetes gestacional');
+  const temPressaoAlta = respostas.condicoesSaude.includes('Pressão alta') ||
+    respostas.condicoesAtuais.includes('Pressão alta ou pré-eclâmpsia');
+  const temCondicaoClinicaComplexa = respostas.condicoesSaude.some((condicao) => (
+    ['Doença cardíaca', 'Doença renal', 'Epilepsia', 'Doença autoimune'].includes(condicao)
+  ));
+  const temSinalDeAlerta = (
+    respostas.sangramento !== 'Não' ||
+    respostas.perdaLiquido === 'Sim' ||
+    respostas.dorAbdominalForte === 'Sim' ||
+    respostas.sintomasPressaoAlta === 'Sim' ||
+    respostas.sintomaGrave === 'Sim' ||
+    respostas.movimentosReduzidos === 'Sim' ||
+    respostas.febre === 'Sim'
+  );
+
+  if (temDiabetes) {
+    adicionarRecomendacao(recomendacoes, 'Diabetes: mantenha o acompanhamento pré-natal e siga o plano alimentar e as orientações de monitoramento da glicose definidos pela equipe de saúde. Não ajuste insulina ou outros medicamentos por conta própria.');
+  }
+
+  if (temPressaoAlta) {
+    adicionarRecomendacao(recomendacoes, 'Pressão alta: mantenha acompanhamento obstétrico regular e procure atendimento imediatamente se tiver dor de cabeça forte, alteração visual, dor na parte superior da barriga, falta de ar ou inchaço súbito.');
+  }
+
+  if (respostas.condicoesAtuais.includes('Anemia grave')) {
+    adicionarRecomendacao(recomendacoes, 'Anemia: compareça às consultas e use ferro ou outros suplementos somente conforme a prescrição profissional. Procure atendimento se apresentar falta de ar importante, desmaio ou piora do cansaço.');
+  }
+
+  if (respostas.condicoesAtuais.includes('Infecção que necessita de acompanhamento')) {
+    adicionarRecomendacao(recomendacoes, 'Infecção em acompanhamento: siga o tratamento prescrito até o fim e retorne ao serviço se houver febre, piora dos sintomas ou dificuldade para ingerir líquidos.');
+  }
+
+  if (temCondicaoClinicaComplexa) {
+    adicionarRecomendacao(recomendacoes, 'Condição crônica: mantenha o pré-natal de alto risco e o acompanhamento com a especialidade indicada. Não interrompa medicamentos de uso contínuo sem orientação.');
+  }
+
+  if (respostas.gestacaoMultipla === 'Sim') {
+    adicionarRecomendacao(recomendacoes, 'Gestação múltipla: mantenha as consultas de pré-natal conforme o intervalo indicado pela equipe e procure atendimento se surgirem contrações, perda de líquido ou sangramento.');
+  }
+
+  if (!respostas.complicacoesAnteriores.some((resposta) => (
+    resposta === 'Não tive gestação anterior' || resposta === 'Nenhuma complicação'
+  ))) {
+    adicionarRecomendacao(recomendacoes, 'Histórico gestacional: informe à equipe de pré-natal as complicações anteriores e mantenha os exames e retornos recomendados.');
+  }
+
+  if (respostas.usoSubstancias === 'Sim') {
+    adicionarRecomendacao(recomendacoes, 'Uso de substâncias: procure a equipe de saúde para receber apoio sigiloso e sem julgamento. Evite álcool, cigarro e outras drogas durante a gestação.');
+  }
+
+  if (respostas.medicamentoSemOrientacao === 'Sim') {
+    adicionarRecomendacao(recomendacoes, 'Medicamentos: não inicie, suspenda ou altere doses sem orientação da equipe de saúde. Leve à consulta a lista de todos os remédios, chás e suplementos usados.');
+  }
+
+  if (temSinalDeAlerta) {
+    adicionarRecomendacao(recomendacoes, 'Sinal de alerta informado: procure imediatamente a maternidade, pronto atendimento ou o serviço de urgência. Não espere a próxima consulta de pré-natal.');
+  }
+
+  if (!recomendacoes.length) {
+    adicionarRecomendacao(recomendacoes, 'Mantenha o pré-natal em dia, siga as orientações da equipe de saúde e leve suas dúvidas para as consultas.');
+  }
+
+  adicionarRecomendacao(recomendacoes, 'Estas recomendações são educativas e não substituem avaliação médica ou de enfermagem.');
+  return recomendacoes;
+}
+
 async function createAvaliacaoRisco(idGestante, dados) {
   const respostas = {
     gestacaoMultipla: respostaValida(dados.gestacaoMultipla, ['Sim', 'Não', 'Não sei']),
@@ -423,6 +498,7 @@ async function createAvaliacaoRisco(idGestante, dados) {
   }
 
   const classificacao = classificarAvaliacaoRisco(respostas);
+  const recomendacoes = gerarRecomendacoesAvaliacaoRisco(respostas);
 
   try {
     await initializeDatabase();
@@ -431,8 +507,8 @@ async function createAvaliacaoRisco(idGestante, dados) {
         id_gestante, gestacao_multipla, possui_doenca_cronica, complicacao_atual,
         complicacao_anterior, uso_substancias, medicamento_sem_orientacao,
         sangramento, perda_liquido, dor_abdominal_forte, sintomas_pressao_alta,
-        sintoma_grave, movimentos_reduzidos, febre, classificacao
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        sintoma_grave, movimentos_reduzidos, febre, classificacao, recomendacoes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING id_avaliacao`,
       [
         idGestante,
@@ -449,11 +525,12 @@ async function createAvaliacaoRisco(idGestante, dados) {
         respostas.sintomaGrave,
         respostas.movimentosReduzidos,
         respostas.febre,
-        classificacao
+        classificacao,
+        JSON.stringify(recomendacoes)
       ]
     );
 
-    return { id: rows[0].id_avaliacao, classificacao };
+    return { id: rows[0].id_avaliacao, classificacao, recomendacoes };
   } catch (error) {
     console.warn('Erro ao salvar avaliação de risco:', error.message);
     return { error: 'Não foi possível salvar a avaliação de risco agora. Tente novamente.' };

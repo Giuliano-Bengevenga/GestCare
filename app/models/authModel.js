@@ -60,8 +60,11 @@ async function criarEstrutura() {
       sintoma_grave VARCHAR(5) NOT NULL,
       movimentos_reduzidos VARCHAR(35) NOT NULL,
       febre VARCHAR(25) NOT NULL,
-      classificacao VARCHAR(30) NOT NULL
+      classificacao VARCHAR(30) NOT NULL,
+      recomendacoes TEXT NOT NULL DEFAULT '[]'
     )`,
+    `ALTER TABLE avaliacao_risco
+     ADD COLUMN IF NOT EXISTS recomendacoes TEXT NOT NULL DEFAULT '[]'`,
     'CREATE INDEX IF NOT EXISTS idx_avaliacao_risco_gestante ON avaliacao_risco (id_gestante, data_avaliacao)',
     `CREATE TABLE IF NOT EXISTS protocolos_medicos (
       id_protocolo SERIAL PRIMARY KEY,

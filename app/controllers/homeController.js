@@ -94,6 +94,19 @@ function lerRespostasMultiplas(valor) {
   }
 }
 
+function obterRecomendacoesDaAvaliacao(avaliacaoRisco) {
+  const recomendacoes = lerRespostasMultiplas(avaliacaoRisco?.recomendacoes);
+
+  if (recomendacoes.length) {
+    return recomendacoes;
+  }
+
+  return [
+    'Mantenha acompanhamento regular de pré-natal.',
+    'Siga as orientações da equipe de saúde e procure atendimento se notar sinais de alerta.'
+  ];
+}
+
 function formatarLista(respostas) {
   if (respostas.length <= 1) return respostas[0] || '';
   if (respostas.length === 2) return `${respostas[0]} e ${respostas[1]}`;
@@ -223,11 +236,7 @@ exports.gestacao = async (req, res) => {
     altura: 'Não informada',
     proximaConsulta: 'Não agendada',
     observacoes: 'Gestação acompanhada com boa evolução e sem sinais de alerta.',
-    recomendacoes: [
-      'Manter alimentação balanceada e hidratação adequada.',
-      'Realizar atividades leves e repouso suficiente.',
-      'Comparecer às consultas de pré-natal e registrar qualquer sintoma incomum.'
-    ]
+    recomendacoes: obterRecomendacoesDaAvaliacao(avaliacaoRisco)
   };
 
   if (ultimoAcompanhamento) {
