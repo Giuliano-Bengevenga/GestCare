@@ -970,6 +970,118 @@ main {
   cursor: pointer;
 }
 
+.admin-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-metric-card,
+.admin-panel {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+}
+
+.admin-metric-card {
+  min-height: 132px;
+  padding: 22px;
+  border-top: 4px solid var(--primary);
+}
+
+.admin-metric-card:nth-child(2) {
+  border-top-color: var(--green);
+}
+
+.admin-metric-card:nth-child(3) {
+  border-top-color: var(--pink);
+}
+
+.admin-metric-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.admin-metric-card strong {
+  display: block;
+  margin-top: 12px;
+  color: var(--primary-dark);
+  font-size: 34px;
+  line-height: 1;
+}
+
+.admin-panel {
+  margin-bottom: 24px;
+  padding: 24px;
+}
+
+.admin-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.admin-section-heading h2 {
+  margin: 0 0 6px;
+  color: var(--primary-dark);
+  font-size: 21px;
+}
+
+.admin-section-heading p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.admin-count {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e8eef9;
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-table {
+  min-width: 760px;
+}
+
+.admin-table-detail {
+  display: block;
+  max-width: 440px;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.admin-empty-state {
+  margin-top: 20px;
+  padding: 24px;
+  border: 1px dashed #93c5fd;
+  border-radius: 14px;
+  background: #f8fbff;
+  text-align: center;
+}
+
+.admin-empty-state h3 {
+  margin: 0 0 7px;
+  color: var(--primary-dark);
+}
+
+.admin-empty-state p {
+  margin: 0;
+  color: var(--muted);
+}
+
 .realizados-intro {
   margin: 14px 0 18px;
   color: #166534;
@@ -997,7 +1109,8 @@ main {
   .cards,
   .dashboard,
   .informacoes,
-  .share-access-card {
+  .share-access-card,
+  .admin-metrics {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -1019,6 +1132,14 @@ main {
   .share-access-card,
   .share-access-empty {
     grid-template-columns: 1fr;
+  }
+
+  .admin-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-panel {
+    padding: 20px;
   }
 
   .share-access-card {

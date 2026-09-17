@@ -8,6 +8,7 @@ const {
   getProtocolosMedicosPorSemana,
   getProtocolosMedicosAnterioresPorSemana,
   getProtocolosRealizadosByGestanteId,
+  getPainelExamesProtocolosAdmin,
   marcarProtocoloComoRealizado,
   desmarcarProtocoloComoRealizado
 } = require('../models/gestanteModel');
@@ -185,10 +186,13 @@ exports.index = async (req, res) => {
   const data = getHomeData();
   const user = req.session.user || null;
   const gestante = user ? await getGestanteByUserId(user.id) : null;
+  const isAdmin = user?.role === 'admin';
 
   res.render('index', {
-    title: data.title,
-    message: data.message,
+    title: isAdmin ? 'Painel administrativo' : data.title,
+    message: isAdmin
+      ? 'Acompanhe os exames concluídos e os protocolos cadastrados.'
+      : data.message,
     user,
     dashboard: data.dashboard,
     chaveAcesso: gestante ? gestante.chave_acesso : null
@@ -351,6 +355,29 @@ exports.protocolosMedicos = async (req, res) => {
       : req.query.sucesso === 'reaberto'
         ? 'Exame movido novamente para os pendentes.'
         : null
+  });
+};
+
+exports.examesProtocolosAdmin = async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  if (req.session.user.role !== 'admin') {
+    return res.status(403).send('Acesso restrito a administradores.');
+  }
+
+  const painel = await getPainelExamesProtocolosAdmin();
+  const examesRecentes = painel.examesRecentes.map((exame) => ({
+    ...exame,
+    concluidoEm: formatarDataHora(exame.concluido_em)
+  }));
+
+  return res.render('adminExamesProtocolos', {
+    user: req.session.user,
+    resumo: painel.resumo,
+    protocolos: painel.protocolos,
+    examesRecentes
   });
 };
 

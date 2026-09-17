@@ -10,7 +10,9 @@
   <nav class="menu" aria-label="Menu principal">
     <a class="<%= activePage === 'home' ? 'active' : '' %>" href="/">Início</a>
 
-    <% if (user) { %>
+    <% if (user && user.role === 'admin') { %>
+      <a class="<%= activePage === 'admin-exames-protocolos' ? 'active' : '' %>" href="/admin/exames-protocolos">Exames e protocolos</a>
+    <% } else if (user) { %>
       <a class="<%= activePage === 'gestacao' ? 'active' : '' %>" href="/gestacao">Minha gestação</a>
       <a class="<%= activePage === 'avaliacao-risco' ? 'active' : '' %>" href="/avaliacao-risco">Avaliação de risco</a>
       <a class="<%= activePage === 'protocolos' ? 'active' : '' %>" href="/protocolos-medicos">Agenda de protocolos</a>

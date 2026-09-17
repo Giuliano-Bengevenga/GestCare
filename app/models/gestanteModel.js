@@ -303,6 +303,60 @@ async function getProtocolosRealizadosByGestanteId(idGestante) {
   }
 }
 
+async function getPainelExamesProtocolosAdmin() {
+  try {
+    await initializeDatabase();
+
+    const [resumoResult, protocolosResult, examesRecentesResult] = await Promise.all([
+      pool.query(
+        `SELECT
+           (SELECT COUNT(*) FROM protocolos_medicos)::INTEGER AS total_protocolos,
+           (SELECT COUNT(*) FROM protocolos_realizados)::INTEGER AS total_exames_realizados,
+           (SELECT COUNT(DISTINCT id_gestante) FROM protocolos_realizados)::INTEGER AS total_gestantes_com_exames`
+      ),
+      pool.query(
+        `SELECT p.id_protocolo, p.categoria, p.titulo, p.descricao, p.semana_inicio, p.semana_fim,
+                COUNT(pr.id_realizacao)::INTEGER AS total_realizados,
+                COUNT(DISTINCT pr.id_gestante)::INTEGER AS total_gestantes
+         FROM protocolos_medicos p
+         LEFT JOIN protocolos_realizados pr ON pr.id_protocolo = p.id_protocolo
+         GROUP BY p.id_protocolo, p.categoria, p.titulo, p.descricao, p.semana_inicio, p.semana_fim
+         ORDER BY p.semana_inicio ASC, p.semana_fim ASC, p.titulo ASC`
+      ),
+      pool.query(
+        `SELECT pr.id_realizacao, pr.concluido_em, g.nome AS nome_gestante,
+                p.id_protocolo, p.categoria, p.titulo
+         FROM protocolos_realizados pr
+         INNER JOIN gestantes g ON g.id_gestante = pr.id_gestante
+         INNER JOIN protocolos_medicos p ON p.id_protocolo = pr.id_protocolo
+         ORDER BY pr.concluido_em DESC, pr.id_realizacao DESC
+         LIMIT 10`
+      )
+    ]);
+
+    return {
+      resumo: resumoResult.rows[0] || {
+        total_protocolos: 0,
+        total_exames_realizados: 0,
+        total_gestantes_com_exames: 0
+      },
+      protocolos: protocolosResult.rows,
+      examesRecentes: examesRecentesResult.rows
+    };
+  } catch (error) {
+    console.warn('Erro ao buscar painel administrativo de exames e protocolos:', error.message);
+    return {
+      resumo: {
+        total_protocolos: 0,
+        total_exames_realizados: 0,
+        total_gestantes_com_exames: 0
+      },
+      protocolos: [],
+      examesRecentes: []
+    };
+  }
+}
+
 async function marcarProtocoloComoRealizado(idGestante, idProtocolo) {
   try {
     await initializeDatabase();
@@ -568,6 +622,7 @@ module.exports.getUltimaAvaliacaoRiscoByGestanteId = getUltimaAvaliacaoRiscoByGe
 module.exports.getProtocolosMedicosPorSemana = getProtocolosMedicosPorSemana;
 module.exports.getProtocolosMedicosAnterioresPorSemana = getProtocolosMedicosAnterioresPorSemana;
 module.exports.getProtocolosRealizadosByGestanteId = getProtocolosRealizadosByGestanteId;
+module.exports.getPainelExamesProtocolosAdmin = getPainelExamesProtocolosAdmin;
 module.exports.marcarProtocoloComoRealizado = marcarProtocoloComoRealizado;
 module.exports.desmarcarProtocoloComoRealizado = desmarcarProtocoloComoRealizado;
 module.exports.createAvaliacaoRisco = createAvaliacaoRisco;

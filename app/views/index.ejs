@@ -32,7 +32,16 @@
                 </div>
             </header>
 
-            <% if (user && chaveAcesso) { %>
+            <% if (user && user.role === 'admin') { %>
+                <section class="share-access-card share-access-empty">
+                    <div class="share-access-copy">
+                        <span class="share-eyebrow">Administração</span>
+                        <h2>Consulte os exames e protocolos</h2>
+                        <p>Acompanhe os protocolos cadastrados e os exames concluídos pelas gestantes.</p>
+                    </div>
+                    <a class="button-link share-access-button" href="/admin/exames-protocolos">Abrir painel</a>
+                </section>
+            <% } else if (user && chaveAcesso) { %>
                 <section class="share-access-card" aria-labelledby="share-access-title">
                     <div class="share-access-copy">
                         <span class="share-eyebrow">Acesso compartilhável</span>

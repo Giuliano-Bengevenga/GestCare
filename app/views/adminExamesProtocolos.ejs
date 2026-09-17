@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <title>Exames e protocolos - GestCare</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/pwa.js" defer></script>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('partials/sidebar', { user: user, activePage: 'admin-exames-protocolos' }) %>
+
+      <main>
+        <header class="header">
+          <div>
+            <h1>Exames e protocolos</h1>
+            <p>Visão administrativa dos protocolos cadastrados e dos exames concluídos.</p>
+          </div>
+          <div class="usuario">
+            <span class="avatar" aria-hidden="true"><%= (user.name || 'U').trim().charAt(0).toUpperCase() %></span>
+            <span>Olá, <%= user.name %></span>
+          </div>
+        </header>
+
+        <section class="admin-metrics" aria-label="Resumo de exames e protocolos">
+          <article class="admin-metric-card">
+            <span>Protocolos cadastrados</span>
+            <strong><%= resumo.total_protocolos %></strong>
+          </article>
+          <article class="admin-metric-card">
+            <span>Exames concluídos</span>
+            <strong><%= resumo.total_exames_realizados %></strong>
+          </article>
+          <article class="admin-metric-card">
+            <span>Gestantes com exame registrado</span>
+            <strong><%= resumo.total_gestantes_com_exames %></strong>
+          </article>
+        </section>
+
+        <section class="admin-panel" aria-labelledby="protocolos-cadastrados-title">
+          <div class="admin-section-heading">
+            <div>
+              <h2 id="protocolos-cadastrados-title">Protocolos cadastrados</h2>
+              <p>Confira o período recomendado e a adesão a cada exame ou cuidado.</p>
+            </div>
+            <span class="admin-count"><%= protocolos.length %> <%= protocolos.length === 1 ? 'item' : 'itens' %></span>
+          </div>
+
+          <% if (protocolos.length) { %>
+            <div class="table-wrapper">
+              <table class="table admin-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Exame ou protocolo</th>
+                    <th scope="col">Categoria</th>
+                    <th scope="col">Janela gestacional</th>
+                    <th scope="col">Exames concluídos</th>
+                    <th scope="col">Gestantes atendidas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% protocolos.forEach(function(protocolo) { %>
+                    <tr>
+                      <td>
+                        <strong><%= protocolo.titulo %></strong>
+                        <% if (protocolo.descricao) { %>
+                          <span class="admin-table-detail"><%= protocolo.descricao %></span>
+                        <% } %>
+                      </td>
+                      <td><span class="categoria"><%= protocolo.categoria %></span></td>
+                      <td><%= protocolo.semana_inicio %>ª a <%= protocolo.semana_fim %>ª semana</td>
+                      <td><%= protocolo.total_realizados %></td>
+                      <td><%= protocolo.total_gestantes %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="admin-empty-state">
+              <h3>Nenhum protocolo cadastrado</h3>
+              <p>Os exames e protocolos cadastrados aparecerão aqui.</p>
+            </div>
+          <% } %>
+        </section>
+
+        <section class="admin-panel" aria-labelledby="exames-recentes-title">
+          <div class="admin-section-heading">
+            <div>
+              <h2 id="exames-recentes-title">Exames concluídos recentemente</h2>
+              <p>Últimos registros realizados pelas gestantes.</p>
+            </div>
+          </div>
+
+          <% if (examesRecentes.length) { %>
+            <div class="table-wrapper">
+              <table class="table admin-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Gestante</th>
+                    <th scope="col">Exame ou protocolo</th>
+                    <th scope="col">Categoria</th>
+                    <th scope="col">Concluído em</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% examesRecentes.forEach(function(exame) { %>
+                    <tr>
+                      <td><strong><%= exame.nome_gestante %></strong></td>
+                      <td><%= exame.titulo %></td>
+                      <td><span class="categoria"><%= exame.categoria %></span></td>
+                      <td><%= exame.concluidoEm %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="admin-empty-state">
+              <h3>Sem exames concluídos</h3>
+              <p>Quando uma gestante registrar um exame, ele será exibido aqui.</p>
+            </div>
+          <% } %>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
