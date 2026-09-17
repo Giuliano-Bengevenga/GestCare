@@ -21,15 +21,18 @@
       <% } %>
 
       <label for="email">E-mail</label>
-      <input type="email" id="email" name="email" required placeholder="seu@email.com">
+      <input type="email" id="email" name="email" required placeholder="seu@email.com" value="<%= values.email %>" aria-describedby="<%= fieldErrors.email ? 'email-error' : '' %>">
+      <% if (fieldErrors.email) { %><p class="field-error" id="email-error"><%= fieldErrors.email %></p><% } %>
 
       <label for="password">Senha</label>
-      <input type="password" id="password" name="password" required placeholder="Sua senha">
+      <input type="password" id="password" name="password" required placeholder="Sua senha" aria-describedby="<%= fieldErrors.password ? 'password-error' : '' %>">
+      <% if (fieldErrors.password) { %><p class="field-error" id="password-error"><%= fieldErrors.password %></p><% } %>
 
       <button type="submit">Entrar</button>
 
       <div class="helper-text">
         <p>Não tem conta? <a href="/cadastro">Cadastre-se</a></p>
+        <p><a href="/ajuda">Precisa de ajuda?</a></p>
       </div>
     </form>
   </div>

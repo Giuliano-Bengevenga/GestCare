@@ -13,6 +13,9 @@
 </head>
 <body>
   <% const checked = (field, option) => { const selected = Array.isArray(values[field]) ? values[field] : [values[field]]; return selected.includes(option) ? 'checked' : ''; }; %>
+  <% const fieldError = (field) => fieldErrors[field] || ''; %>
+  <% const camposDaEtapaDois = ['sangramento', 'perdaLiquido', 'dorAbdominalForte', 'sintomasPressaoAlta', 'sintomaGrave', 'movimentosReduzidos', 'febre']; %>
+  <% const etapaInicial = camposDaEtapaDois.some((field) => fieldErrors[field]) ? 2 : 1; %>
 
   <div class="container-fluid">
     <div class="row">
@@ -30,7 +33,7 @@
           </div>
         </header>
 
-        <form class="risk-assessment-card" method="POST" action="/avaliacao-risco">
+        <form class="risk-assessment-card" data-risk-form data-initial-step="<%= etapaInicial %>" method="POST" action="/avaliacao-risco">
           <div class="risk-form-intro">
             <span class="share-eyebrow">Questionário de saúde</span>
             <h2>Condições de saúde e sinais de alerta</h2>
@@ -41,135 +44,166 @@
             <div class="alert error"><%= error %></div>
           <% } %>
 
-          <section class="risk-section" aria-labelledby="historico-title">
+          <aside class="emergency-guidance" role="note" aria-labelledby="emergency-guidance-title">
+            <div>
+              <h2 id="emergency-guidance-title">Precisa de ajuda agora?</h2>
+              <p>Este questionário não substitui atendimento. Se a situação parecer urgente, procure uma maternidade ou pronto atendimento. Em emergência, ligue para o SAMU.</p>
+            </div>
+            <a href="tel:192">Ligar 192</a>
+          </aside>
+
+          <div class="risk-progress" aria-label="Progresso da avaliação">
+            <span class="risk-progress-label" data-risk-progress role="status" aria-live="polite">Etapa 1 de 2</span>
+            <div class="risk-progress-track" aria-hidden="true"><span data-risk-progress-bar></span></div>
+          </div>
+
+          <section class="risk-section risk-step" data-risk-step="1" aria-labelledby="historico-title">
             <h3 id="historico-title">Histórico e condições de saúde</h3>
 
             <fieldset class="risk-question">
-              <legend>5. Você está grávida de gêmeos ou mais bebês?</legend>
+              <legend>1. Você está grávida de gêmeos ou mais bebês?</legend>
               <div class="risk-options">
                 <% ['Sim', 'Não', 'Não sei'].forEach((option) => { %>
                   <label class="risk-option"><input type="radio" name="gestacaoMultipla" value="<%= option %>" <%= checked('gestacaoMultipla', option) %> required><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('gestacaoMultipla')) { %><p class="field-error"><%= fieldError('gestacaoMultipla') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>6. Você possui alguma destas condições de saúde?</legend>
+              <legend>2. Você possui alguma destas condições de saúde?</legend>
               <p class="risk-hint">Selecione todas as opções aplicáveis.</p>
               <div class="risk-options risk-options-grid">
                 <% ['Pressão alta', 'Diabetes', 'Doença cardíaca', 'Doença renal', 'Epilepsia', 'Doença autoimune', 'Outra doença crônica', 'Nenhuma'].forEach((option) => { %>
                   <label class="risk-option"><input type="checkbox" name="condicoesSaude" value="<%= option %>" <%= checked('condicoesSaude', option) %>><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('condicoesSaude')) { %><p class="field-error"><%= fieldError('condicoesSaude') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>7. Durante esta gestação, algum profissional informou que você apresenta uma destas condições?</legend>
+              <legend>3. Durante esta gestação, algum profissional informou que você apresenta uma destas condições?</legend>
               <p class="risk-hint">Selecione todas as opções aplicáveis.</p>
               <div class="risk-options risk-options-grid">
                 <% ['Pressão alta ou pré-eclâmpsia', 'Diabetes gestacional', 'Anemia grave', 'Infecção que necessita de acompanhamento', 'Alteração na placenta', 'Alteração no crescimento do bebê', 'Nenhuma'].forEach((option) => { %>
                   <label class="risk-option"><input type="checkbox" name="condicoesAtuais" value="<%= option %>" <%= checked('condicoesAtuais', option) %>><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('condicoesAtuais')) { %><p class="field-error"><%= fieldError('condicoesAtuais') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>8. Você já teve alguma complicação em uma gestação anterior?</legend>
+              <legend>4. Você já teve alguma complicação em uma gestação anterior?</legend>
               <p class="risk-hint">Selecione todas as opções aplicáveis.</p>
               <div class="risk-options risk-options-grid">
                 <% ['Parto prematuro', 'Pré-eclâmpsia ou pressão alta', 'Diabetes gestacional', 'Aborto recorrente', 'Óbito fetal ou neonatal', 'Hemorragia grave', 'Não tive gestação anterior', 'Nenhuma complicação'].forEach((option) => { %>
                   <label class="risk-option"><input type="checkbox" name="complicacoesAnteriores" value="<%= option %>" <%= checked('complicacoesAnteriores', option) %>><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('complicacoesAnteriores')) { %><p class="field-error"><%= fieldError('complicacoesAnteriores') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>9. Você usa cigarro, bebida alcoólica ou outras drogas durante a gestação?</legend>
+              <legend>5. Você usa cigarro, bebida alcoólica ou outras drogas durante a gestação?</legend>
               <div class="risk-options">
                 <% ['Sim', 'Não', 'Prefiro não responder'].forEach((option) => { %>
                   <label class="risk-option"><input type="radio" name="usoSubstancias" value="<%= option %>" <%= checked('usoSubstancias', option) %> required><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('usoSubstancias')) { %><p class="field-error"><%= fieldError('usoSubstancias') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>10. Você está tomando algum medicamento sem orientação de um profissional de saúde?</legend>
+              <legend>6. Você está tomando algum medicamento sem orientação de um profissional de saúde?</legend>
               <div class="risk-options">
                 <% ['Sim', 'Não'].forEach((option) => { %>
                   <label class="risk-option"><input type="radio" name="medicamentoSemOrientacao" value="<%= option %>" <%= checked('medicamentoSemOrientacao', option) %> required><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('medicamentoSemOrientacao')) { %><p class="field-error"><%= fieldError('medicamentoSemOrientacao') %></p><% } %>
             </fieldset>
+            <div class="risk-step-actions">
+              <button class="risk-next" data-risk-next type="button">Continuar</button>
+            </div>
           </section>
 
-          <section class="risk-section" aria-labelledby="alertas-title">
+          <section class="risk-section risk-step" data-risk-step="2" aria-labelledby="alertas-title">
             <h3 id="alertas-title">Sintomas atuais e sinais de alerta</h3>
 
             <fieldset class="risk-question">
-              <legend>11. Você está apresentando sangramento vaginal?</legend>
+              <legend>7. Você está apresentando sangramento vaginal?</legend>
               <div class="risk-options">
                 <% ['Não', 'Pequena quantidade', 'Sangramento intenso'].forEach((option) => { %>
                   <label class="risk-option"><input type="radio" name="sangramento" value="<%= option %>" <%= checked('sangramento', option) %> required><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('sangramento')) { %><p class="field-error"><%= fieldError('sangramento') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>12. Você está com perda de líquido pela vagina, como se a bolsa tivesse rompido?</legend>
+              <legend>8. Você está com perda de líquido pela vagina, como se a bolsa tivesse rompido?</legend>
               <div class="risk-options">
                 <% ['Sim', 'Não', 'Não sei'].forEach((option) => { %>
                   <label class="risk-option"><input type="radio" name="perdaLiquido" value="<%= option %>" <%= checked('perdaLiquido', option) %> required><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('perdaLiquido')) { %><p class="field-error"><%= fieldError('perdaLiquido') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>13. Você está sentindo dor forte ou persistente na barriga?</legend>
+              <legend>9. Você está sentindo dor forte ou persistente na barriga?</legend>
               <div class="risk-options">
                 <% ['Sim', 'Não'].forEach((option) => { %>
                   <label class="risk-option"><input type="radio" name="dorAbdominalForte" value="<%= option %>" <%= checked('dorAbdominalForte', option) %> required><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('dorAbdominalForte')) { %><p class="field-error"><%= fieldError('dorAbdominalForte') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>14. Você está com dor de cabeça intensa, visão embaçada, pontos luminosos ou dor forte na parte superior da barriga?</legend>
+              <legend>10. Você está com dor de cabeça intensa, visão embaçada, pontos luminosos ou dor forte na parte superior da barriga?</legend>
               <div class="risk-options">
                 <% ['Sim', 'Não'].forEach((option) => { %>
                   <label class="risk-option"><input type="radio" name="sintomasPressaoAlta" value="<%= option %>" <%= checked('sintomasPressaoAlta', option) %> required><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('sintomasPressaoAlta')) { %><p class="field-error"><%= fieldError('sintomasPressaoAlta') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>15. Você teve convulsão, desmaio, falta de ar intensa ou dor no peito?</legend>
+              <legend>11. Você teve convulsão, desmaio, falta de ar intensa ou dor no peito?</legend>
               <div class="risk-options">
                 <% ['Sim', 'Não'].forEach((option) => { %>
                   <label class="risk-option"><input type="radio" name="sintomaGrave" value="<%= option %>" <%= checked('sintomaGrave', option) %> required><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('sintomaGrave')) { %><p class="field-error"><%= fieldError('sintomaGrave') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>16. Se você já sente o bebê se movimentar, percebeu diminuição ou ausência dos movimentos?</legend>
+              <legend>12. Se você já sente o bebê se movimentar, percebeu diminuição ou ausência dos movimentos?</legend>
               <div class="risk-options">
                 <% ['Sim', 'Não', 'Ainda não sinto os movimentos', 'Não sei avaliar'].forEach((option) => { %>
                   <label class="risk-option"><input type="radio" name="movimentosReduzidos" value="<%= option %>" <%= checked('movimentosReduzidos', option) %> required><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('movimentosReduzidos')) { %><p class="field-error"><%= fieldError('movimentosReduzidos') %></p><% } %>
             </fieldset>
 
             <fieldset class="risk-question">
-              <legend>17. Você está com febre de 38 °C ou mais?</legend>
+              <legend>13. Você está com febre de 38 °C ou mais?</legend>
               <div class="risk-options">
                 <% ['Sim', 'Não', 'Não medi a temperatura'].forEach((option) => { %>
                   <label class="risk-option"><input type="radio" name="febre" value="<%= option %>" <%= checked('febre', option) %> required><span><%= option %></span></label>
                 <% }); %>
               </div>
+              <% if (fieldError('febre')) { %><p class="field-error"><%= fieldError('febre') %></p><% } %>
             </fieldset>
+            <div class="risk-step-actions risk-final-actions">
+              <button class="risk-back" data-risk-back type="button">Voltar</button>
+              <button class="risk-submit" type="submit">Salvar avaliação de risco</button>
+            </div>
           </section>
-
-          <button class="risk-submit" type="submit">Salvar avaliação de risco</button>
         </form>
       </main>
     </div>

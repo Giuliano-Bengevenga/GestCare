@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <title>Ajuda - GestCare</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/pwa.js" defer></script>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('partials/sidebar', { user: user, activePage: 'ajuda' }) %>
+
+      <main>
+        <header class="header">
+          <div>
+            <h1>Ajuda</h1>
+            <p>Encontre orientações para usar o GestCare com segurança.</p>
+          </div>
+          <% if (user) { %>
+            <div class="usuario">
+              <span class="avatar" aria-hidden="true"><%= (user.name || 'U').trim().charAt(0).toUpperCase() %></span>
+              <span>Olá, <%= user.name %></span>
+            </div>
+          <% } %>
+        </header>
+
+        <section class="help-grid" aria-label="Orientações de uso">
+          <article class="help-card">
+            <h2>Acompanhar a gestação</h2>
+            <p>Cadastre a gestação, informe a DUM e responda à avaliação de risco. Depois, mantenha peso e pressão atualizados no registro pré-natal.</p>
+          </article>
+          <article class="help-card">
+            <h2>Agenda de exames</h2>
+            <p>Os protocolos são organizados pela semana gestacional. Marque um exame como realizado somente após ele ter sido feito.</p>
+          </article>
+          <article class="help-card">
+            <h2>Chave de acesso</h2>
+            <p>Compartilhe a chave somente com pessoas autorizadas a acompanhar a gestação. Ela dá acesso a informações pessoais de saúde.</p>
+          </article>
+        </section>
+
+        <section class="emergency-guidance emergency-guidance-page" role="note" aria-labelledby="help-emergency-title">
+          <div>
+            <h2 id="help-emergency-title">Se a situação parecer urgente</h2>
+            <p>O GestCare é uma ferramenta de acompanhamento e não substitui atendimento profissional. Procure uma maternidade ou pronto atendimento. Em emergência, ligue para o SAMU.</p>
+          </div>
+          <a href="tel:192">Ligar 192</a>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

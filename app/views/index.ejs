@@ -32,6 +32,13 @@
                 </div>
             </header>
 
+            <% if (nomeGestanteAcompanhada) { %>
+                <section class="shared-following-notice" aria-label="Gestação em acompanhamento">
+                    <p>Você está acompanhando a gestação de <strong><%= nomeGestanteAcompanhada %></strong>.</p>
+                    <a href="/gestacao">Ver acompanhamento</a>
+                </section>
+            <% } %>
+
             <% if (user && user.role === 'admin') { %>
                 <section class="share-access-card share-access-empty">
                     <div class="share-access-copy">

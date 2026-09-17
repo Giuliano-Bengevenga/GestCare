@@ -167,6 +167,15 @@ a:hover {
   color: #166534;
 }
 
+.field-error {
+  display: block;
+  margin: 7px 0 12px;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .helper-text {
   margin-top: 20px;
   font-size: 14px;
@@ -349,6 +358,40 @@ main {
   color: var(--text);
 }
 
+.install-app-button {
+  padding: 9px 12px;
+  border: 1px solid #93c5fd;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: var(--primary-dark);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.install-app-button:hover {
+  background: #dbeafe;
+}
+
+.install-app-feedback {
+  position: fixed;
+  z-index: 10;
+  right: 20px;
+  bottom: 20px;
+  max-width: min(360px, calc(100vw - 40px));
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #1e3a8a;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+  color: var(--white);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 .share-access-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
@@ -360,6 +403,31 @@ main {
   border-radius: 20px;
   background: linear-gradient(125deg, #eff6ff, #ffffff 65%);
   box-shadow: 0 12px 28px rgba(37, 99, 235, 0.09);
+}
+
+.shared-following-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  border: 1px solid #bfdbfe;
+  border-left: 5px solid var(--primary);
+  border-radius: 14px;
+  background: #eff6ff;
+}
+
+.shared-following-notice p {
+  margin: 0;
+  color: var(--primary-dark);
+  line-height: 1.45;
+}
+
+.shared-following-notice a {
+  flex: 0 0 auto;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .share-eyebrow {
@@ -505,6 +573,75 @@ main {
   line-height: 1.55;
 }
 
+.emergency-guidance {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 0 0 22px;
+  padding: 18px 20px;
+  border: 1px solid #fecaca;
+  border-left: 5px solid #dc2626;
+  border-radius: 14px;
+  background: #fff7f7;
+}
+
+.emergency-guidance h2 {
+  margin: 0 0 5px;
+  color: #991b1b;
+  font-size: 18px;
+}
+
+.emergency-guidance p {
+  margin: 0;
+  color: #7f1d1d;
+  line-height: 1.5;
+}
+
+.emergency-guidance a {
+  flex: 0 0 auto;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: #b91c1c;
+  color: var(--white);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.emergency-guidance a:hover {
+  background: #991b1b;
+  color: var(--white);
+  text-decoration: none;
+}
+
+.risk-progress {
+  margin: 0 0 22px;
+}
+
+.risk-progress-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--primary-dark);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.risk-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dbeafe;
+}
+
+.risk-progress-track span {
+  display: block;
+  width: 50%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), var(--pink));
+  transition: width 0.2s ease;
+}
+
 .risk-section + .risk-section {
   margin-top: 28px;
 }
@@ -596,6 +733,38 @@ main {
 .risk-submit:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+}
+
+.risk-step-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.risk-next,
+.risk-back {
+  padding: 13px 18px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.risk-next {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.risk-back {
+  background: #e8eef9;
+  color: var(--primary-dark);
+}
+
+.risk-final-actions .risk-submit {
+  width: auto;
+  margin-top: 0;
 }
 
 .cards {
@@ -1171,6 +1340,79 @@ main {
   background: var(--primary-dark);
 }
 
+.admin-edit-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.admin-cancel-link {
+  color: var(--primary-dark);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.undo-protocol-form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  background: #f0fdf4;
+}
+
+.undo-protocol-form p {
+  margin: 0;
+  color: #166534;
+}
+
+.undo-protocol-form button {
+  flex: 0 0 auto;
+  padding: 10px 13px;
+  border: 1px solid #16a34a;
+  border-radius: 10px;
+  background: var(--white);
+  color: #166534;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.help-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.help-card {
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+}
+
+.help-card h2 {
+  margin: 0 0 8px;
+  color: var(--primary-dark);
+  font-size: 19px;
+}
+
+.help-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.emergency-guidance-page {
+  margin-bottom: 24px;
+}
+
 .realizados-intro {
   margin: 14px 0 18px;
   color: #166534;
@@ -1199,7 +1441,8 @@ main {
   .dashboard,
   .informacoes,
   .share-access-card,
-  .admin-metrics {
+  .admin-metrics,
+  .help-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -1215,6 +1458,10 @@ main {
     gap: 10px;
   }
 
+  .usuario {
+    flex-wrap: wrap;
+  }
+
   .cards,
   .dashboard,
   .informacoes,
@@ -1227,6 +1474,10 @@ main {
     grid-template-columns: 1fr;
   }
 
+  .help-grid {
+    grid-template-columns: 1fr;
+  }
+
   .admin-panel {
     padding: 20px;
   }
@@ -1235,9 +1486,29 @@ main {
     grid-template-columns: 1fr;
   }
 
+  .emergency-guidance,
+  .undo-protocol-form {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .risk-step-actions {
+    flex-direction: column-reverse;
+  }
+
+  .risk-step-actions button,
+  .risk-final-actions .risk-submit {
+    width: 100%;
+  }
+
   .share-access-card {
     gap: 20px;
     padding: 22px;
+  }
+
+  .shared-following-notice {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .share-access-button {

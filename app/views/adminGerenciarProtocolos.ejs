@@ -9,6 +9,7 @@
   <title>Gerenciar protocolos - GestCare</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/pwa.js" defer></script>
+  <script src="/admin-protocolos.js" defer></script>
 </head>
 <body>
   <div class="container-fluid">
@@ -35,6 +36,13 @@
           <div class="alert success"><%= success %></div>
         <% } %>
 
+        <% if (undoProtocol) { %>
+          <form class="undo-protocol-form" method="POST" action="/admin/exames-protocolos/<%= undoProtocol.id_protocolo %>/desfazer">
+            <p>Última alteração: <strong><%= undoProtocol.titulo %></strong>.</p>
+            <button type="submit">Desfazer última alteração</button>
+          </form>
+        <% } %>
+
         <section class="admin-panel" aria-labelledby="protocolos-edicao-title">
           <div class="admin-section-heading">
             <div>
@@ -47,7 +55,9 @@
           <% if (protocolos.length) { %>
             <div class="protocolos-admin-lista">
               <% protocolos.forEach(function(protocolo) { %>
-                <form class="admin-edit-form" method="POST" action="/admin/exames-protocolos/<%= protocolo.id_protocolo %>">
+                <% const protocoloComErro = errorProtocolId === protocolo.id_protocolo; %>
+                <% const errosDoProtocolo = protocoloComErro ? fieldErrors : {}; %>
+                <form class="admin-edit-form" data-admin-protocol-form method="POST" action="/admin/exames-protocolos/<%= protocolo.id_protocolo %>">
                   <div class="admin-edit-form-header">
                     <h3><%= protocolo.titulo %></h3>
                     <span class="admin-protocol-id">#<%= protocolo.id_protocolo %></span>
@@ -56,19 +66,23 @@
                   <div class="admin-edit-grid">
                     <label>
                       Categoria
-                      <input type="text" name="categoria" value="<%= protocolo.categoria %>" maxlength="20" required>
+                      <input type="text" name="categoria" value="<%= protocolo.categoria %>" maxlength="20" required aria-describedby="<%= errosDoProtocolo.categoria ? `categoria-error-${protocolo.id_protocolo}` : '' %>">
+                      <% if (errosDoProtocolo.categoria) { %><span class="field-error" id="categoria-error-<%= protocolo.id_protocolo %>"><%= errosDoProtocolo.categoria %></span><% } %>
                     </label>
                     <label>
                       Título
-                      <input type="text" name="titulo" value="<%= protocolo.titulo %>" maxlength="100" required>
+                      <input type="text" name="titulo" value="<%= protocolo.titulo %>" maxlength="100" required aria-describedby="<%= errosDoProtocolo.titulo ? `titulo-error-${protocolo.id_protocolo}` : '' %>">
+                      <% if (errosDoProtocolo.titulo) { %><span class="field-error" id="titulo-error-<%= protocolo.id_protocolo %>"><%= errosDoProtocolo.titulo %></span><% } %>
                     </label>
                     <label>
                       Início da janela (semana)
-                      <input type="number" name="semanaInicio" value="<%= protocolo.semana_inicio %>" min="0" max="45" required>
+                      <input type="number" name="semanaInicio" value="<%= protocolo.semana_inicio %>" min="0" max="45" required aria-describedby="<%= errosDoProtocolo.semanaInicio ? `semana-inicio-error-${protocolo.id_protocolo}` : '' %>">
+                      <% if (errosDoProtocolo.semanaInicio) { %><span class="field-error" id="semana-inicio-error-<%= protocolo.id_protocolo %>"><%= errosDoProtocolo.semanaInicio %></span><% } %>
                     </label>
                     <label>
                       Fim da janela (semana)
-                      <input type="number" name="semanaFim" value="<%= protocolo.semana_fim %>" min="0" max="45" required>
+                      <input type="number" name="semanaFim" value="<%= protocolo.semana_fim %>" min="0" max="45" required aria-describedby="<%= errosDoProtocolo.semanaFim ? `semana-fim-error-${protocolo.id_protocolo}` : '' %>">
+                      <% if (errosDoProtocolo.semanaFim) { %><span class="field-error" id="semana-fim-error-<%= protocolo.id_protocolo %>"><%= errosDoProtocolo.semanaFim %></span><% } %>
                     </label>
                   </div>
 
@@ -77,7 +91,10 @@
                     <textarea name="descricao" rows="3" maxlength="2000"><%= protocolo.descricao || '' %></textarea>
                   </label>
 
-                  <button class="admin-save-button" type="submit">Salvar alterações</button>
+                  <div class="admin-edit-actions">
+                    <button class="admin-save-button" type="submit">Salvar alterações</button>
+                    <a class="admin-cancel-link" href="/admin/exames-protocolos">Cancelar alterações</a>
+                  </div>
                 </form>
               <% }) %>
             </div>

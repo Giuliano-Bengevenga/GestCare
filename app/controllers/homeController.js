@@ -10,6 +10,7 @@ const {
   getProtocolosRealizadosByGestanteId,
   getPainelExamesProtocolosAdmin,
   getTodosProtocolosMedicos,
+  getProtocoloMedicoById,
   atualizarProtocoloMedico,
   marcarProtocoloComoRealizado,
   desmarcarProtocoloComoRealizado
@@ -184,6 +185,41 @@ function obterMotivosDaClassificacao(avaliacaoRisco) {
   return motivos.length ? motivos : ['Nenhum fator adicional foi informado na última avaliação.'];
 }
 
+async function renderGerenciamentoProtocolos(req, res, {
+  error = null,
+  success = null,
+  formValues = null,
+  fieldErrors = {},
+  errorProtocolId = null,
+  status = 200
+} = {}) {
+  const protocolos = await getTodosProtocolosMedicos();
+  const protocolosComValores = formValues
+    ? protocolos.map((protocolo) => (
+      protocolo.id_protocolo === Number(formValues.idProtocolo)
+        ? {
+          ...protocolo,
+          categoria: formValues.categoria,
+          titulo: formValues.titulo,
+          descricao: formValues.descricao,
+          semana_inicio: formValues.semanaInicio,
+          semana_fim: formValues.semanaFim
+        }
+        : protocolo
+    ))
+    : protocolos;
+
+  return res.status(status).render('adminGerenciarProtocolos', {
+    user: req.session.user,
+    protocolos: protocolosComValores,
+    error,
+    success,
+    fieldErrors,
+    errorProtocolId,
+    undoProtocol: req.session.ultimaEdicaoProtocolo || null
+  });
+}
+
 exports.index = async (req, res) => {
   const data = getHomeData();
   const user = req.session.user || null;
@@ -204,13 +240,20 @@ exports.index = async (req, res) => {
   }
 
   const gestante = user ? await getGestanteByUserId(user.id) : null;
+  const gestanteEmAcompanhamento = user && req.session.gestanteId
+    ? await getGestanteById(req.session.gestanteId)
+    : gestante;
+  const acompanhandoOutraGestacao = Boolean(
+    gestanteEmAcompanhamento && gestanteEmAcompanhamento.id_usuario !== user?.id
+  );
 
   return res.render('index', {
     title: data.title,
     message: data.message,
     user,
     dashboard: data.dashboard,
-    chaveAcesso: gestante ? gestante.chave_acesso : null
+    chaveAcesso: gestante ? gestante.chave_acesso : null,
+    nomeGestanteAcompanhada: acompanhandoOutraGestacao ? gestanteEmAcompanhamento.nome : null
   });
 };
 
@@ -264,16 +307,21 @@ exports.gestacao = async (req, res) => {
     paciente.observacoes = `Último registro realizado em ${ultimoAcompanhamento.dataRegistro}.`;
   }
 
+  const formularioPendente = req.session.formularioAcompanhamento || null;
+  delete req.session.formularioAcompanhamento;
+
   res.render('gestacao', {
     user: req.session.user || null,
     paciente,
     acompanhamentos,
-    error: typeof req.query.erro === 'string' ? req.query.erro : null,
+    error: formularioPendente?.error || (typeof req.query.erro === 'string' ? req.query.erro : null),
     success: req.query.sucesso === '1'
       ? 'Registro pré-natal salvo com sucesso.'
       : req.query.avaliacao === '1'
         ? 'Avaliação de risco salva com sucesso.'
-        : null
+        : null,
+    prenatalValues: formularioPendente?.values || {},
+    fieldErrors: formularioPendente?.fieldErrors || {}
   });
 };
 
@@ -295,7 +343,16 @@ exports.saveAcompanhamento = async (req, res) => {
   const result = await createAcompanhamento(gestante.id_gestante, req.body, gestante.dum);
 
   if (result.error) {
-    return res.redirect(`/gestacao?erro=${encodeURIComponent(result.error)}`);
+    req.session.formularioAcompanhamento = {
+      error: result.error,
+      fieldErrors: result.fieldErrors || {},
+      values: {
+        pesoAtual: req.body.pesoAtual || '',
+        pressaoSistolica: req.body.pressaoSistolica || '',
+        pressaoDiastolica: req.body.pressaoDiastolica || ''
+      }
+    };
+    return res.redirect('/gestacao');
   }
 
   return res.redirect('/gestacao?sucesso=1');
@@ -382,11 +439,7 @@ exports.examesProtocolosAdmin = async (req, res) => {
     return res.status(403).send('Acesso restrito a administradores.');
   }
 
-  const protocolos = await getTodosProtocolosMedicos();
-
-  return res.render('adminGerenciarProtocolos', {
-    user: req.session.user,
-    protocolos,
+  return renderGerenciamentoProtocolos(req, res, {
     error: req.query.erro === 'dados-invalidos'
       ? 'Preencha categoria e título e informe uma janela entre 0 e 45 semanas.'
       : req.query.erro === 'nao-encontrado'
@@ -394,7 +447,11 @@ exports.examesProtocolosAdmin = async (req, res) => {
         : req.query.erro === 'salvar'
           ? 'Não foi possível salvar as alterações. Tente novamente.'
           : null,
-    success: req.query.sucesso === '1' ? 'Protocolo atualizado com sucesso.' : null
+    success: req.query.sucesso === '1'
+      ? 'Protocolo atualizado com sucesso. Você pode desfazer esta alteração agora.'
+      : req.query.sucesso === 'desfeito'
+        ? 'A última alteração foi desfeita.'
+        : null
   });
 };
 
@@ -412,10 +469,63 @@ exports.atualizarProtocoloMedicoAdmin = async (req, res) => {
     return res.redirect('/admin/exames-protocolos?erro=nao-encontrado');
   }
 
+  const protocoloAnterior = await getProtocoloMedicoById(idProtocolo);
+  if (!protocoloAnterior) {
+    return res.redirect('/admin/exames-protocolos?erro=nao-encontrado');
+  }
+
   const resultado = await atualizarProtocoloMedico(idProtocolo, req.body);
-  return res.redirect(resultado.success
-    ? '/admin/exames-protocolos?sucesso=1'
-    : `/admin/exames-protocolos?erro=${resultado.error}`);
+  if (!resultado.success) {
+    const mensagens = {
+      'dados-invalidos': 'Revise os campos indicados para salvar o protocolo.',
+      salvar: 'Não foi possível salvar as alterações. Tente novamente.'
+    };
+    return renderGerenciamentoProtocolos(req, res, {
+      status: 400,
+      error: mensagens[resultado.error] || 'Não foi possível salvar as alterações.',
+      fieldErrors: resultado.fieldErrors || {},
+      errorProtocolId: idProtocolo,
+      formValues: { ...req.body, idProtocolo }
+    });
+  }
+
+  req.session.ultimaEdicaoProtocolo = protocoloAnterior;
+  return res.redirect('/admin/exames-protocolos?sucesso=1');
+};
+
+exports.desfazerAtualizacaoProtocoloAdmin = async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  if (req.session.user.role !== 'admin') {
+    return res.status(403).send('Acesso restrito a administradores.');
+  }
+
+  const protocoloAnterior = req.session.ultimaEdicaoProtocolo;
+  const idProtocolo = Number(req.params.idProtocolo);
+  if (!protocoloAnterior || protocoloAnterior.id_protocolo !== idProtocolo) {
+    return res.redirect('/admin/exames-protocolos?erro=nao-encontrado');
+  }
+
+  const resultado = await atualizarProtocoloMedico(idProtocolo, {
+    categoria: protocoloAnterior.categoria,
+    titulo: protocoloAnterior.titulo,
+    descricao: protocoloAnterior.descricao,
+    semanaInicio: protocoloAnterior.semana_inicio,
+    semanaFim: protocoloAnterior.semana_fim
+  });
+
+  if (!resultado.success) {
+    return res.redirect('/admin/exames-protocolos?erro=salvar');
+  }
+
+  delete req.session.ultimaEdicaoProtocolo;
+  return res.redirect('/admin/exames-protocolos?sucesso=desfeito');
+};
+
+exports.ajuda = (req, res) => {
+  return res.render('ajuda', { user: req.session.user || null });
 };
 
 exports.atualizarConclusaoProtocolo = async (req, res) => {

@@ -21,7 +21,8 @@
       <% } %>
 
       <label for="chaveAcesso">Chave de acesso</label>
-      <input type="text" id="chaveAcesso" name="chaveAcesso" maxlength="32" required placeholder="GEST-XXXXXXXXXXXXXXXXXXXX" value="<%= chaveAcesso || '' %>">
+      <input type="text" id="chaveAcesso" name="chaveAcesso" maxlength="32" required placeholder="GEST-XXXXXXXXXXXXXXXXXXXX" value="<%= chaveAcesso || '' %>" aria-describedby="<%= fieldErrors.chaveAcesso ? 'chave-acesso-error' : '' %>">
+      <% if (fieldErrors.chaveAcesso) { %><p class="field-error" id="chave-acesso-error"><%= fieldErrors.chaveAcesso %></p><% } %>
 
       <button type="submit">Acompanhar gestação</button>
       <div class="helper-text"><p><a href="/situacao-gestacao">Voltar</a></p></div>

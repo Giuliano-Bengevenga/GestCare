@@ -20,6 +20,13 @@ function valoresIniciaisAvaliacaoRisco(values = {}) {
   };
 }
 
+function valoresCadastro(values = {}) {
+  return {
+    name: String(values.name || '').trim(),
+    email: String(values.email || '').trim()
+  };
+}
+
 async function getGestanteDaSessao(req) {
   return req.session.gestanteId
     ? gestanteModel.getGestanteById(req.session.gestanteId)
@@ -31,23 +38,38 @@ exports.showRegister = (req, res) => {
     return res.redirect('/');
   }
 
-  res.render('register', { error: null, success: null });
+  res.render('register', {
+    error: null,
+    success: null,
+    values: valoresCadastro(),
+    fieldErrors: {}
+  });
 };
 
 exports.register = async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
+  const values = valoresCadastro(req.body);
 
   if (!name || !email || !password || !confirmPassword) {
     return res.status(400).render('register', {
       error: 'Preencha todos os campos.',
-      success: null
+      success: null,
+      values,
+      fieldErrors: {
+        ...(!name ? { name: 'Informe seu nome.' } : {}),
+        ...(!email ? { email: 'Informe seu e-mail.' } : {}),
+        ...(!password ? { password: 'Informe uma senha.' } : {}),
+        ...(!confirmPassword ? { confirmPassword: 'Confirme sua senha.' } : {})
+      }
     });
   }
 
   if (password !== confirmPassword) {
     return res.status(400).render('register', {
       error: 'As senhas não conferem.',
-      success: null
+      success: null,
+      values,
+      fieldErrors: { confirmPassword: 'A confirmação deve ser igual à senha.' }
     });
   }
 
@@ -57,7 +79,9 @@ exports.register = async (req, res) => {
     if (!createdUser) {
       return res.status(400).render('register', {
         error: 'Não foi possível cadastrar. Verifique se o e-mail já existe.',
-        success: null
+        success: null,
+        values,
+        fieldErrors: { email: 'Verifique se este e-mail já está cadastrado.' }
       });
     }
 
@@ -67,7 +91,9 @@ exports.register = async (req, res) => {
     console.error(error);
     return res.status(500).render('register', {
       error: 'Erro ao cadastrar usuário.',
-      success: null
+      success: null,
+      values,
+      fieldErrors: {}
     });
   }
 };
@@ -104,7 +130,8 @@ exports.showPregnancyForm = (req, res) => {
   return res.render('dadosGestacao', {
     user: req.session.user,
     error: null,
-    values: { nome: req.session.user.name, cpf: '', dataNascimento: '', dum: '' }
+    values: { nome: req.session.user.name, cpf: '', dataNascimento: '', dum: '' },
+    fieldErrors: {}
   });
 };
 
@@ -126,7 +153,8 @@ exports.savePregnancy = async (req, res) => {
     return res.status(400).render('dadosGestacao', {
       user: req.session.user,
       error: result.error,
-      values: { nome, cpf, dataNascimento, dum }
+      values: { nome, cpf, dataNascimento, dum },
+      fieldErrors: result.fieldErrors || {}
     });
   }
 
@@ -152,7 +180,8 @@ exports.showAvaliacaoRisco = async (req, res) => {
   return res.render('avaliacaoRisco', {
     user: req.session.user,
     error: null,
-    values: valoresIniciaisAvaliacaoRisco()
+    values: valoresIniciaisAvaliacaoRisco(),
+    fieldErrors: {}
   });
 };
 
@@ -174,7 +203,8 @@ exports.saveAvaliacaoRisco = async (req, res) => {
     return res.status(400).render('avaliacaoRisco', {
       user: req.session.user,
       error: result.error,
-      values: valoresIniciaisAvaliacaoRisco(req.body)
+      values: valoresIniciaisAvaliacaoRisco(req.body),
+      fieldErrors: result.fieldErrors || {}
     });
   }
 
@@ -186,7 +216,12 @@ exports.showAccessKey = (req, res) => {
     return res.redirect('/login');
   }
 
-  return res.render('chaveAcesso', { user: req.session.user, error: null, chaveAcesso: '' });
+  return res.render('chaveAcesso', {
+    user: req.session.user,
+    error: null,
+    chaveAcesso: '',
+    fieldErrors: {}
+  });
 };
 
 exports.checkAccessKey = async (req, res) => {
@@ -201,7 +236,8 @@ exports.checkAccessKey = async (req, res) => {
     return res.status(404).render('chaveAcesso', {
       user: req.session.user,
       error: 'Chave de acesso inválida. Confira e tente novamente.',
-      chaveAcesso
+      chaveAcesso,
+      fieldErrors: { chaveAcesso: 'Confira a chave informada.' }
     });
   }
 

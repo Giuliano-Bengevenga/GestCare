@@ -24,8 +24,17 @@ async function createGestante({ userId, nome, cpf, dataNascimento, dum }) {
   const cpfNormalizado = normalizarCpf(cpf);
   const dumNormalizada = String(dum || '').trim() || null;
 
-  if (!nomeNormalizado || !cpfNormalizado || !dataValida(dataNascimento) || (dumNormalizada && !dataValida(dumNormalizada))) {
-    return { error: 'Informe nome, CPF válido, data de nascimento e uma DUM válida, se preenchida.' };
+  const fieldErrors = {};
+  if (!nomeNormalizado) fieldErrors.nome = 'Informe o nome completo.';
+  if (!cpfNormalizado) fieldErrors.cpf = 'Informe um CPF válido com 11 números.';
+  if (!dataValida(dataNascimento)) fieldErrors.dataNascimento = 'Informe uma data de nascimento válida.';
+  if (dumNormalizada && !dataValida(dumNormalizada)) fieldErrors.dum = 'Informe uma data válida ou deixe este campo vazio.';
+
+  if (Object.keys(fieldErrors).length) {
+    return {
+      error: 'Revise os campos indicados para continuar.',
+      fieldErrors
+    };
   }
 
   try {
@@ -173,7 +182,14 @@ async function createAcompanhamento(idGestante, dados, dum) {
   }
 
   if (pesoAtual === null || pressaoSistolica === null || pressaoDiastolica === null) {
-    return { error: 'Preencha peso e pressão arterial com valores válidos.' };
+    const fieldErrors = {};
+    if (pesoAtual === null) fieldErrors.pesoAtual = 'Informe um peso válido.';
+    if (pressaoSistolica === null) fieldErrors.pressaoSistolica = 'Informe uma pressão sistólica válida.';
+    if (pressaoDiastolica === null) fieldErrors.pressaoDiastolica = 'Informe uma pressão diastólica válida.';
+    return {
+      error: 'Revise os campos indicados para salvar o registro.',
+      fieldErrors
+    };
   }
 
   try {
@@ -373,6 +389,24 @@ async function getTodosProtocolosMedicos() {
   }
 }
 
+async function getProtocoloMedicoById(idProtocolo) {
+  try {
+    await initializeDatabase();
+    const { rows } = await pool.query(
+      `SELECT id_protocolo, categoria, titulo, descricao, semana_inicio, semana_fim
+       FROM protocolos_medicos
+       WHERE id_protocolo = $1
+       LIMIT 1`,
+      [idProtocolo]
+    );
+
+    return rows[0] || null;
+  } catch (error) {
+    console.warn('Erro ao buscar protocolo médico:', error.message);
+    return null;
+  }
+}
+
 function textoLimitado(valor, limite) {
   const texto = String(valor || '').trim();
   return texto && texto.length <= limite ? texto : null;
@@ -388,7 +422,15 @@ async function atualizarProtocoloMedico(idProtocolo, dados) {
   const semanaFim = semanaFimInformada ? inteiroValido(semanaFimInformada, 0, 45) : null;
 
   if (!categoria || !titulo || semanaInicio === null || semanaFim === null || semanaInicio > semanaFim) {
-    return { error: 'dados-invalidos' };
+    const fieldErrors = {};
+    if (!categoria) fieldErrors.categoria = 'Informe uma categoria de até 20 caracteres.';
+    if (!titulo) fieldErrors.titulo = 'Informe um título de até 100 caracteres.';
+    if (semanaInicio === null) fieldErrors.semanaInicio = 'Informe uma semana entre 0 e 45.';
+    if (semanaFim === null) fieldErrors.semanaFim = 'Informe uma semana entre 0 e 45.';
+    if (semanaInicio !== null && semanaFim !== null && semanaInicio > semanaFim) {
+      fieldErrors.semanaFim = 'A semana final deve ser igual ou posterior à semana inicial.';
+    }
+    return { error: 'dados-invalidos', fieldErrors };
   }
 
   try {
@@ -598,7 +640,15 @@ async function createAvaliacaoRisco(idGestante, dados) {
   };
 
   if (Object.values(respostas).some((resposta) => resposta === null)) {
-    return { error: 'Responda todas as perguntas usando as opções apresentadas.' };
+    const fieldErrors = Object.fromEntries(
+      Object.entries(respostas)
+        .filter(([, resposta]) => resposta === null)
+        .map(([campo]) => [campo, 'Selecione uma resposta válida.'])
+    );
+    return {
+      error: 'Responda os campos indicados usando as opções apresentadas.',
+      fieldErrors
+    };
   }
 
   const classificacao = classificarAvaliacaoRisco(respostas);
@@ -674,6 +724,7 @@ module.exports.getProtocolosMedicosAnterioresPorSemana = getProtocolosMedicosAnt
 module.exports.getProtocolosRealizadosByGestanteId = getProtocolosRealizadosByGestanteId;
 module.exports.getPainelExamesProtocolosAdmin = getPainelExamesProtocolosAdmin;
 module.exports.getTodosProtocolosMedicos = getTodosProtocolosMedicos;
+module.exports.getProtocoloMedicoById = getProtocoloMedicoById;
 module.exports.atualizarProtocoloMedico = atualizarProtocoloMedico;
 module.exports.marcarProtocoloComoRealizado = marcarProtocoloComoRealizado;
 module.exports.desmarcarProtocoloComoRealizado = desmarcarProtocoloComoRealizado;

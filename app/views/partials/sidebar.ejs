@@ -20,6 +20,8 @@
       <a class="<%= activePage === 'login' ? 'active' : '' %>" href="/login">Entrar</a>
       <a class="menu-signup <%= activePage === 'cadastro' ? 'active' : '' %>" href="/cadastro">Criar conta</a>
     <% } %>
+
+    <a class="<%= activePage === 'ajuda' ? 'active' : '' %>" href="/ajuda">Ajuda</a>
   </nav>
 
   <% if (user) { %>

@@ -1,12 +1,15 @@
-const CACHE_NAME = 'gestcare-static-v4';
+const CACHE_NAME = 'gestcare-static-v5';
 const STATIC_ASSETS = [
   '/style.css',
   '/access-key-copy.js',
+  '/admin-protocolos.js',
   '/risk-choices.js',
   '/pwa.js',
   '/manifest.webmanifest',
   '/icon.svg',
   '/icon-maskable.svg',
+  '/icon-192.png',
+  '/icon-512.png',
   '/offline.html'
 ];
 
