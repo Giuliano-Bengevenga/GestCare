@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <title>Gerenciar protocolos - GestCare</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/pwa.js" defer></script>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('partials/sidebar', { user: user, activePage: 'admin-exames-protocolos' }) %>
+
+      <main>
+        <header class="header">
+          <div>
+            <h1>Gerenciar protocolos</h1>
+            <p>Edite os exames e cuidados cadastrados na agenda das gestantes.</p>
+          </div>
+          <div class="usuario">
+            <span class="avatar" aria-hidden="true"><%= (user.name || 'U').trim().charAt(0).toUpperCase() %></span>
+            <span>Olá, <%= user.name %></span>
+          </div>
+        </header>
+
+        <% if (error) { %>
+          <div class="alert error"><%= error %></div>
+        <% } %>
+
+        <% if (success) { %>
+          <div class="alert success"><%= success %></div>
+        <% } %>
+
+        <section class="admin-panel" aria-labelledby="protocolos-edicao-title">
+          <div class="admin-section-heading">
+            <div>
+              <h2 id="protocolos-edicao-title">Protocolos médicos</h2>
+              <p>Altere as informações e salve cada protocolo individualmente.</p>
+            </div>
+            <span class="admin-count"><%= protocolos.length %> <%= protocolos.length === 1 ? 'item' : 'itens' %></span>
+          </div>
+
+          <% if (protocolos.length) { %>
+            <div class="protocolos-admin-lista">
+              <% protocolos.forEach(function(protocolo) { %>
+                <form class="admin-edit-form" method="POST" action="/admin/exames-protocolos/<%= protocolo.id_protocolo %>">
+                  <div class="admin-edit-form-header">
+                    <h3><%= protocolo.titulo %></h3>
+                    <span class="admin-protocol-id">#<%= protocolo.id_protocolo %></span>
+                  </div>
+
+                  <div class="admin-edit-grid">
+                    <label>
+                      Categoria
+                      <input type="text" name="categoria" value="<%= protocolo.categoria %>" maxlength="20" required>
+                    </label>
+                    <label>
+                      Título
+                      <input type="text" name="titulo" value="<%= protocolo.titulo %>" maxlength="100" required>
+                    </label>
+                    <label>
+                      Início da janela (semana)
+                      <input type="number" name="semanaInicio" value="<%= protocolo.semana_inicio %>" min="0" max="45" required>
+                    </label>
+                    <label>
+                      Fim da janela (semana)
+                      <input type="number" name="semanaFim" value="<%= protocolo.semana_fim %>" min="0" max="45" required>
+                    </label>
+                  </div>
+
+                  <label class="admin-description-field">
+                    Descrição
+                    <textarea name="descricao" rows="3" maxlength="2000"><%= protocolo.descricao || '' %></textarea>
+                  </label>
+
+                  <button class="admin-save-button" type="submit">Salvar alterações</button>
+                </form>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <div class="admin-empty-state">
+              <h3>Nenhum protocolo cadastrado</h3>
+              <p>Quando houver protocolos no banco, eles poderão ser editados nesta tela.</p>
+            </div>
+          <% } %>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

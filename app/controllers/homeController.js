@@ -9,6 +9,8 @@ const {
   getProtocolosMedicosAnterioresPorSemana,
   getProtocolosRealizadosByGestanteId,
   getPainelExamesProtocolosAdmin,
+  getTodosProtocolosMedicos,
+  atualizarProtocoloMedico,
   marcarProtocoloComoRealizado,
   desmarcarProtocoloComoRealizado
 } = require('../models/gestanteModel');
@@ -185,14 +187,27 @@ function obterMotivosDaClassificacao(avaliacaoRisco) {
 exports.index = async (req, res) => {
   const data = getHomeData();
   const user = req.session.user || null;
-  const gestante = user ? await getGestanteByUserId(user.id) : null;
-  const isAdmin = user?.role === 'admin';
 
-  res.render('index', {
-    title: isAdmin ? 'Painel administrativo' : data.title,
-    message: isAdmin
-      ? 'Acompanhe os exames concluídos e os protocolos cadastrados.'
-      : data.message,
+  if (user?.role === 'admin') {
+    const painel = await getPainelExamesProtocolosAdmin();
+    const examesRecentes = painel.examesRecentes.map((exame) => ({
+      ...exame,
+      concluidoEm: formatarDataHora(exame.concluido_em)
+    }));
+
+    return res.render('adminExamesProtocolos', {
+      user,
+      resumo: painel.resumo,
+      protocolos: painel.protocolos,
+      examesRecentes
+    });
+  }
+
+  const gestante = user ? await getGestanteByUserId(user.id) : null;
+
+  return res.render('index', {
+    title: data.title,
+    message: data.message,
     user,
     dashboard: data.dashboard,
     chaveAcesso: gestante ? gestante.chave_acesso : null
@@ -367,18 +382,40 @@ exports.examesProtocolosAdmin = async (req, res) => {
     return res.status(403).send('Acesso restrito a administradores.');
   }
 
-  const painel = await getPainelExamesProtocolosAdmin();
-  const examesRecentes = painel.examesRecentes.map((exame) => ({
-    ...exame,
-    concluidoEm: formatarDataHora(exame.concluido_em)
-  }));
+  const protocolos = await getTodosProtocolosMedicos();
 
-  return res.render('adminExamesProtocolos', {
+  return res.render('adminGerenciarProtocolos', {
     user: req.session.user,
-    resumo: painel.resumo,
-    protocolos: painel.protocolos,
-    examesRecentes
+    protocolos,
+    error: req.query.erro === 'dados-invalidos'
+      ? 'Preencha categoria e título e informe uma janela entre 0 e 45 semanas.'
+      : req.query.erro === 'nao-encontrado'
+        ? 'Esse protocolo não foi encontrado.'
+        : req.query.erro === 'salvar'
+          ? 'Não foi possível salvar as alterações. Tente novamente.'
+          : null,
+    success: req.query.sucesso === '1' ? 'Protocolo atualizado com sucesso.' : null
   });
+};
+
+exports.atualizarProtocoloMedicoAdmin = async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  if (req.session.user.role !== 'admin') {
+    return res.status(403).send('Acesso restrito a administradores.');
+  }
+
+  const idProtocolo = Number(req.params.idProtocolo);
+  if (!Number.isInteger(idProtocolo) || idProtocolo <= 0) {
+    return res.redirect('/admin/exames-protocolos?erro=nao-encontrado');
+  }
+
+  const resultado = await atualizarProtocoloMedico(idProtocolo, req.body);
+  return res.redirect(resultado.success
+    ? '/admin/exames-protocolos?sucesso=1'
+    : `/admin/exames-protocolos?erro=${resultado.error}`);
 };
 
 exports.atualizarConclusaoProtocolo = async (req, res) => {

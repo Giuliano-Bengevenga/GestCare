@@ -1082,6 +1082,95 @@ main {
   color: var(--muted);
 }
 
+.protocolos-admin-lista {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.admin-edit-form {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fbfdff;
+}
+
+.admin-edit-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.admin-edit-form-header h3 {
+  margin: 0;
+  color: var(--primary-dark);
+  font-size: 18px;
+}
+
+.admin-protocol-id {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.admin-edit-form label {
+  display: block;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-edit-form input,
+.admin-edit-form textarea {
+  width: 100%;
+  margin-top: 7px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--text);
+  font: inherit;
+}
+
+.admin-edit-form input:focus,
+.admin-edit-form textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.admin-edit-form textarea {
+  resize: vertical;
+}
+
+.admin-description-field {
+  margin-top: 14px;
+}
+
+.admin-save-button {
+  margin-top: 18px;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--primary);
+  color: var(--white);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-save-button:hover {
+  background: var(--primary-dark);
+}
+
 .realizados-intro {
   margin: 14px 0 18px;
   color: #166534;
@@ -1140,6 +1229,10 @@ main {
 
   .admin-panel {
     padding: 20px;
+  }
+
+  .admin-edit-grid {
+    grid-template-columns: 1fr;
   }
 
   .share-access-card {

@@ -357,6 +357,56 @@ async function getPainelExamesProtocolosAdmin() {
   }
 }
 
+async function getTodosProtocolosMedicos() {
+  try {
+    await initializeDatabase();
+    const { rows } = await pool.query(
+      `SELECT id_protocolo, categoria, titulo, descricao, semana_inicio, semana_fim
+       FROM protocolos_medicos
+       ORDER BY semana_inicio ASC, semana_fim ASC, titulo ASC`
+    );
+
+    return rows;
+  } catch (error) {
+    console.warn('Erro ao buscar protocolos para administração:', error.message);
+    return [];
+  }
+}
+
+function textoLimitado(valor, limite) {
+  const texto = String(valor || '').trim();
+  return texto && texto.length <= limite ? texto : null;
+}
+
+async function atualizarProtocoloMedico(idProtocolo, dados) {
+  const categoria = textoLimitado(dados.categoria, 20);
+  const titulo = textoLimitado(dados.titulo, 100);
+  const descricao = String(dados.descricao || '').trim() || null;
+  const semanaInicioInformada = String(dados.semanaInicio || '').trim();
+  const semanaFimInformada = String(dados.semanaFim || '').trim();
+  const semanaInicio = semanaInicioInformada ? inteiroValido(semanaInicioInformada, 0, 45) : null;
+  const semanaFim = semanaFimInformada ? inteiroValido(semanaFimInformada, 0, 45) : null;
+
+  if (!categoria || !titulo || semanaInicio === null || semanaFim === null || semanaInicio > semanaFim) {
+    return { error: 'dados-invalidos' };
+  }
+
+  try {
+    await initializeDatabase();
+    const result = await pool.query(
+      `UPDATE protocolos_medicos
+       SET categoria = $1, titulo = $2, descricao = $3, semana_inicio = $4, semana_fim = $5
+       WHERE id_protocolo = $6`,
+      [categoria, titulo, descricao, semanaInicio, semanaFim, idProtocolo]
+    );
+
+    return result.rowCount ? { success: true } : { error: 'nao-encontrado' };
+  } catch (error) {
+    console.warn('Erro ao atualizar protocolo médico:', error.message);
+    return { error: 'salvar' };
+  }
+}
+
 async function marcarProtocoloComoRealizado(idGestante, idProtocolo) {
   try {
     await initializeDatabase();
@@ -623,6 +673,8 @@ module.exports.getProtocolosMedicosPorSemana = getProtocolosMedicosPorSemana;
 module.exports.getProtocolosMedicosAnterioresPorSemana = getProtocolosMedicosAnterioresPorSemana;
 module.exports.getProtocolosRealizadosByGestanteId = getProtocolosRealizadosByGestanteId;
 module.exports.getPainelExamesProtocolosAdmin = getPainelExamesProtocolosAdmin;
+module.exports.getTodosProtocolosMedicos = getTodosProtocolosMedicos;
+module.exports.atualizarProtocoloMedico = atualizarProtocoloMedico;
 module.exports.marcarProtocoloComoRealizado = marcarProtocoloComoRealizado;
 module.exports.desmarcarProtocoloComoRealizado = desmarcarProtocoloComoRealizado;
 module.exports.createAvaliacaoRisco = createAvaliacaoRisco;
