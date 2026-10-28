@@ -1,5 +1,9 @@
 const crypto = require('crypto');
-const { pool, initializeDatabase } = require('./authModel');
+const {
+  pool,
+  initializeDatabase,
+  QUESTOES_AVALIACAO_RISCO_PADRAO
+} = require('./authModel');
 
 function normalizarCpf(cpf) {
   const digits = String(cpf || '').replace(/\D/g, '');
@@ -502,6 +506,87 @@ function respostasMultiplasValidas(valor, opcoes, opcoesExclusivas) {
   return respostas;
 }
 
+function textoQuestionarioValido(valor, limite) {
+  const texto = String(valor || '').trim();
+  return texto && texto.length <= limite ? texto : null;
+}
+
+function recomendacaoDaQuestao(questoesPorChave, chave) {
+  return questoesPorChave.get(chave)?.recomendacao
+    || QUESTOES_AVALIACAO_RISCO_PADRAO.find((questao) => questao.chave === chave)?.recomendacao
+    || '';
+}
+
+async function getQuestoesAvaliacaoRisco() {
+  try {
+    await initializeDatabase();
+    const { rows } = await pool.query(
+      `SELECT id_pergunta, chave, etapa, ordem, pergunta, recomendacao
+       FROM questionarios_avaliacao_risco
+       ORDER BY ordem ASC`
+    );
+
+    return rows.length ? rows : QUESTOES_AVALIACAO_RISCO_PADRAO;
+  } catch (error) {
+    console.warn('Erro ao buscar questões da avaliação de risco:', error.message);
+    return QUESTOES_AVALIACAO_RISCO_PADRAO;
+  }
+}
+
+async function getQuestaoAvaliacaoRiscoById(idPergunta) {
+  try {
+    await initializeDatabase();
+    const { rows } = await pool.query(
+      `SELECT id_pergunta, chave, etapa, ordem, pergunta, recomendacao
+       FROM questionarios_avaliacao_risco
+       WHERE id_pergunta = $1
+       LIMIT 1`,
+      [idPergunta]
+    );
+
+    return rows[0] || null;
+  } catch (error) {
+    console.warn('Erro ao buscar questão da avaliação de risco:', error.message);
+    return null;
+  }
+}
+
+async function atualizarQuestaoAvaliacaoRisco(idPergunta, dados) {
+  const pergunta = textoQuestionarioValido(dados.pergunta, 600);
+  const recomendacao = textoQuestionarioValido(dados.recomendacao, 2000);
+  const fieldErrors = {};
+
+  if (!pergunta) {
+    fieldErrors.pergunta = 'Informe uma pergunta com até 600 caracteres.';
+  }
+
+  if (!recomendacao) {
+    fieldErrors.recomendacao = 'Informe uma recomendação com até 2.000 caracteres.';
+  }
+
+  if (Object.keys(fieldErrors).length) {
+    return { success: false, error: 'dados-invalidos', fieldErrors };
+  }
+
+  try {
+    await initializeDatabase();
+    const { rows } = await pool.query(
+      `UPDATE questionarios_avaliacao_risco
+       SET pergunta = $1, recomendacao = $2
+       WHERE id_pergunta = $3
+       RETURNING id_pergunta, chave, etapa, ordem, pergunta, recomendacao`,
+      [pergunta, recomendacao, idPergunta]
+    );
+
+    return rows.length
+      ? { success: true, questao: rows[0] }
+      : { success: false, error: 'nao-encontrado' };
+  } catch (error) {
+    console.warn('Erro ao atualizar questão da avaliação de risco:', error.message);
+    return { success: false, error: 'salvar' };
+  }
+}
+
 function classificarAvaliacaoRisco(respostas) {
   const alertaAtual = (
     respostas.sangramento !== 'Não' ||
@@ -540,65 +625,66 @@ function adicionarRecomendacao(recomendacoes, recomendacao) {
   }
 }
 
-function gerarRecomendacoesAvaliacaoRisco(respostas) {
+function gerarRecomendacoesAvaliacaoRisco(respostas, questoes) {
   const recomendacoes = [];
-  const temDiabetes = respostas.condicoesSaude.includes('Diabetes') ||
-    respostas.condicoesAtuais.includes('Diabetes gestacional');
-  const temPressaoAlta = respostas.condicoesSaude.includes('Pressão alta') ||
-    respostas.condicoesAtuais.includes('Pressão alta ou pré-eclâmpsia');
-  const temCondicaoClinicaComplexa = respostas.condicoesSaude.some((condicao) => (
-    ['Doença cardíaca', 'Doença renal', 'Epilepsia', 'Doença autoimune'].includes(condicao)
-  ));
-  const temSinalDeAlerta = (
-    respostas.sangramento !== 'Não' ||
-    respostas.perdaLiquido === 'Sim' ||
-    respostas.dorAbdominalForte === 'Sim' ||
-    respostas.sintomasPressaoAlta === 'Sim' ||
-    respostas.sintomaGrave === 'Sim' ||
-    respostas.movimentosReduzidos === 'Sim' ||
-    respostas.febre === 'Sim'
-  );
-
-  if (temDiabetes) {
-    adicionarRecomendacao(recomendacoes, 'Diabetes: mantenha o acompanhamento pré-natal e siga o plano alimentar e as orientações de monitoramento da glicose definidos pela equipe de saúde. Não ajuste insulina ou outros medicamentos por conta própria.');
-  }
-
-  if (temPressaoAlta) {
-    adicionarRecomendacao(recomendacoes, 'Pressão alta: mantenha acompanhamento obstétrico regular e procure atendimento imediatamente se tiver dor de cabeça forte, alteração visual, dor na parte superior da barriga, falta de ar ou inchaço súbito.');
-  }
-
-  if (respostas.condicoesAtuais.includes('Anemia grave')) {
-    adicionarRecomendacao(recomendacoes, 'Anemia: compareça às consultas e use ferro ou outros suplementos somente conforme a prescrição profissional. Procure atendimento se apresentar falta de ar importante, desmaio ou piora do cansaço.');
-  }
-
-  if (respostas.condicoesAtuais.includes('Infecção que necessita de acompanhamento')) {
-    adicionarRecomendacao(recomendacoes, 'Infecção em acompanhamento: siga o tratamento prescrito até o fim e retorne ao serviço se houver febre, piora dos sintomas ou dificuldade para ingerir líquidos.');
-  }
-
-  if (temCondicaoClinicaComplexa) {
-    adicionarRecomendacao(recomendacoes, 'Condição crônica: mantenha o pré-natal de alto risco e o acompanhamento com a especialidade indicada. Não interrompa medicamentos de uso contínuo sem orientação.');
-  }
+  const questoesPorChave = new Map(questoes.map((questao) => [questao.chave, questao]));
+  const adicionarRecomendacaoDaQuestao = (chave) => {
+    const recomendacao = recomendacaoDaQuestao(questoesPorChave, chave);
+    if (recomendacao) adicionarRecomendacao(recomendacoes, recomendacao);
+  };
 
   if (respostas.gestacaoMultipla === 'Sim') {
-    adicionarRecomendacao(recomendacoes, 'Gestação múltipla: mantenha as consultas de pré-natal conforme o intervalo indicado pela equipe e procure atendimento se surgirem contrações, perda de líquido ou sangramento.');
+    adicionarRecomendacaoDaQuestao('gestacaoMultipla');
+  }
+
+  if (!respostas.condicoesSaude.includes('Nenhuma')) {
+    adicionarRecomendacaoDaQuestao('condicoesSaude');
+  }
+
+  if (!respostas.condicoesAtuais.includes('Nenhuma')) {
+    adicionarRecomendacaoDaQuestao('condicoesAtuais');
   }
 
   if (!respostas.complicacoesAnteriores.some((resposta) => (
     resposta === 'Não tive gestação anterior' || resposta === 'Nenhuma complicação'
   ))) {
-    adicionarRecomendacao(recomendacoes, 'Histórico gestacional: informe à equipe de pré-natal as complicações anteriores e mantenha os exames e retornos recomendados.');
+    adicionarRecomendacaoDaQuestao('complicacoesAnteriores');
   }
 
   if (respostas.usoSubstancias === 'Sim') {
-    adicionarRecomendacao(recomendacoes, 'Uso de substâncias: procure a equipe de saúde para receber apoio sigiloso e sem julgamento. Evite álcool, cigarro e outras drogas durante a gestação.');
+    adicionarRecomendacaoDaQuestao('usoSubstancias');
   }
 
   if (respostas.medicamentoSemOrientacao === 'Sim') {
-    adicionarRecomendacao(recomendacoes, 'Medicamentos: não inicie, suspenda ou altere doses sem orientação da equipe de saúde. Leve à consulta a lista de todos os remédios, chás e suplementos usados.');
+    adicionarRecomendacaoDaQuestao('medicamentoSemOrientacao');
   }
 
-  if (temSinalDeAlerta) {
-    adicionarRecomendacao(recomendacoes, 'Sinal de alerta informado: procure imediatamente a maternidade, pronto atendimento ou o serviço de urgência. Não espere a próxima consulta de pré-natal.');
+  if (respostas.sangramento !== 'Não') {
+    adicionarRecomendacaoDaQuestao('sangramento');
+  }
+
+  if (respostas.perdaLiquido === 'Sim') {
+    adicionarRecomendacaoDaQuestao('perdaLiquido');
+  }
+
+  if (respostas.dorAbdominalForte === 'Sim') {
+    adicionarRecomendacaoDaQuestao('dorAbdominalForte');
+  }
+
+  if (respostas.sintomasPressaoAlta === 'Sim') {
+    adicionarRecomendacaoDaQuestao('sintomasPressaoAlta');
+  }
+
+  if (respostas.sintomaGrave === 'Sim') {
+    adicionarRecomendacaoDaQuestao('sintomaGrave');
+  }
+
+  if (respostas.movimentosReduzidos === 'Sim') {
+    adicionarRecomendacaoDaQuestao('movimentosReduzidos');
+  }
+
+  if (respostas.febre === 'Sim') {
+    adicionarRecomendacaoDaQuestao('febre');
   }
 
   if (!recomendacoes.length) {
@@ -652,7 +738,8 @@ async function createAvaliacaoRisco(idGestante, dados) {
   }
 
   const classificacao = classificarAvaliacaoRisco(respostas);
-  const recomendacoes = gerarRecomendacoesAvaliacaoRisco(respostas);
+  const questoes = await getQuestoesAvaliacaoRisco();
+  const recomendacoes = gerarRecomendacoesAvaliacaoRisco(respostas, questoes);
 
   try {
     await initializeDatabase();
@@ -728,4 +815,7 @@ module.exports.getProtocoloMedicoById = getProtocoloMedicoById;
 module.exports.atualizarProtocoloMedico = atualizarProtocoloMedico;
 module.exports.marcarProtocoloComoRealizado = marcarProtocoloComoRealizado;
 module.exports.desmarcarProtocoloComoRealizado = desmarcarProtocoloComoRealizado;
+module.exports.getQuestoesAvaliacaoRisco = getQuestoesAvaliacaoRisco;
+module.exports.getQuestaoAvaliacaoRiscoById = getQuestaoAvaliacaoRiscoById;
+module.exports.atualizarQuestaoAvaliacaoRisco = atualizarQuestaoAvaliacaoRisco;
 module.exports.createAvaliacaoRisco = createAvaliacaoRisco;

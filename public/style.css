@@ -1324,6 +1324,24 @@ main {
   margin-top: 14px;
 }
 
+.admin-question-stage {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-question-trigger {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .admin-save-button {
   margin-top: 18px;
   padding: 11px 16px;

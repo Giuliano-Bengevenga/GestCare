@@ -11,6 +11,8 @@ router.post('/protocolos-medicos/:idProtocolo/conclusao', homeController.atualiz
 router.get('/admin/exames-protocolos', homeController.examesProtocolosAdmin);
 router.post('/admin/exames-protocolos/:idProtocolo', homeController.atualizarProtocoloMedicoAdmin);
 router.post('/admin/exames-protocolos/:idProtocolo/desfazer', homeController.desfazerAtualizacaoProtocoloAdmin);
+router.get('/admin/questionarios', homeController.questionariosAdmin);
+router.post('/admin/questionarios/:idPergunta', homeController.atualizarQuestionarioAdmin);
 router.get('/ajuda', homeController.ajuda);
 
 module.exports = router;

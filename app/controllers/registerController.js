@@ -177,11 +177,13 @@ exports.showAvaliacaoRisco = async (req, res) => {
   }
 
   req.session.gestanteId = gestante.id_gestante;
+  const questoes = await gestanteModel.getQuestoesAvaliacaoRisco();
   return res.render('avaliacaoRisco', {
     user: req.session.user,
     error: null,
     values: valoresIniciaisAvaliacaoRisco(),
-    fieldErrors: {}
+    fieldErrors: {},
+    questoes
   });
 };
 
@@ -200,11 +202,13 @@ exports.saveAvaliacaoRisco = async (req, res) => {
   const result = await gestanteModel.createAvaliacaoRisco(gestante.id_gestante, req.body);
 
   if (result.error) {
+    const questoes = await gestanteModel.getQuestoesAvaliacaoRisco();
     return res.status(400).render('avaliacaoRisco', {
       user: req.session.user,
       error: result.error,
       values: valoresIniciaisAvaliacaoRisco(req.body),
-      fieldErrors: result.fieldErrors || {}
+      fieldErrors: result.fieldErrors || {},
+      questoes
     });
   }
 

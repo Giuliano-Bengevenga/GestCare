@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1d4ed8">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <title>Gerenciar questionário - GestCare</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/pwa.js" defer></script>
+  <script src="/admin-questionarios.js" defer></script>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <%- include('partials/sidebar', { user: user, activePage: 'admin-questionarios' }) %>
+
+      <main>
+        <header class="header">
+          <div>
+            <h1>Gerenciar questionário</h1>
+            <p>Edite os textos exibidos na avaliação de risco e as recomendações enviadas conforme cada resposta.</p>
+          </div>
+          <div class="usuario">
+            <span class="avatar" aria-hidden="true"><%= (user.name || 'U').trim().charAt(0).toUpperCase() %></span>
+            <span>Olá, <%= user.name %></span>
+          </div>
+        </header>
+
+        <% if (error) { %>
+          <div class="alert error"><%= error %></div>
+        <% } %>
+
+        <% if (success) { %>
+          <div class="alert success"><%= success %></div>
+        <% } %>
+
+        <section class="admin-panel" aria-labelledby="questionario-edicao-title">
+          <div class="admin-section-heading">
+            <div>
+              <h2 id="questionario-edicao-title">Avaliação de risco gestacional</h2>
+              <p>As alternativas de resposta e os critérios de classificação são protegidos; altere apenas a pergunta e a orientação que será mostrada à gestante.</p>
+            </div>
+            <span class="admin-count"><%= questoes.length %> <%= questoes.length === 1 ? 'pergunta' : 'perguntas' %></span>
+          </div>
+
+          <% if (questoes.length) { %>
+            <div class="protocolos-admin-lista">
+              <% questoes.forEach(function(questao) { %>
+                <% const questaoComErro = errorQuestionId === questao.id_pergunta; %>
+                <% const errosDaQuestao = questaoComErro ? fieldErrors : {}; %>
+                <form class="admin-edit-form admin-question-form" data-admin-question-form method="POST" action="/admin/questionarios/<%= questao.id_pergunta %>">
+                  <div class="admin-edit-form-header">
+                    <div>
+                      <h3>Pergunta <%= questao.ordem %></h3>
+                      <span class="admin-question-stage">Etapa <%= questao.etapa %> da avaliação</span>
+                    </div>
+                    <span class="admin-protocol-id">#<%= questao.id_pergunta %></span>
+                  </div>
+
+                  <p class="admin-question-trigger"><strong>Quando a recomendação aparece:</strong> <%= questao.criterio %></p>
+
+                  <label class="admin-description-field" for="pergunta-<%= questao.id_pergunta %>">
+                    Pergunta exibida à gestante
+                    <textarea id="pergunta-<%= questao.id_pergunta %>" name="pergunta" rows="3" maxlength="600" required aria-describedby="<%= errosDaQuestao.pergunta ? `pergunta-error-${questao.id_pergunta}` : '' %>"><%= questao.pergunta %></textarea>
+                    <% if (errosDaQuestao.pergunta) { %><span class="field-error" id="pergunta-error-<%= questao.id_pergunta %>"><%= errosDaQuestao.pergunta %></span><% } %>
+                  </label>
+
+                  <label class="admin-description-field" for="recomendacao-<%= questao.id_pergunta %>">
+                    Recomendação para esta resposta
+                    <textarea id="recomendacao-<%= questao.id_pergunta %>" name="recomendacao" rows="4" maxlength="2000" required aria-describedby="<%= errosDaQuestao.recomendacao ? `recomendacao-error-${questao.id_pergunta}` : '' %>"><%= questao.recomendacao %></textarea>
+                    <% if (errosDaQuestao.recomendacao) { %><span class="field-error" id="recomendacao-error-<%= questao.id_pergunta %>"><%= errosDaQuestao.recomendacao %></span><% } %>
+                  </label>
+
+                  <div class="admin-edit-actions">
+                    <button class="admin-save-button" type="submit">Salvar alterações</button>
+                    <a class="admin-cancel-link" href="/admin/questionarios">Cancelar alterações</a>
+                  </div>
+                </form>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <div class="admin-empty-state">
+              <h3>Nenhuma pergunta cadastrada</h3>
+              <p>As perguntas padrão serão criadas automaticamente ao conectar o banco de dados.</p>
+            </div>
+          <% } %>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

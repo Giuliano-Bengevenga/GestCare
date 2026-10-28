@@ -13,7 +13,10 @@ const {
   getProtocoloMedicoById,
   atualizarProtocoloMedico,
   marcarProtocoloComoRealizado,
-  desmarcarProtocoloComoRealizado
+  desmarcarProtocoloComoRealizado,
+  getQuestoesAvaliacaoRisco,
+  getQuestaoAvaliacaoRiscoById,
+  atualizarQuestaoAvaliacaoRisco
 } = require('../models/gestanteModel');
 
 function calcularIdade(dataNascimento) {
@@ -217,6 +220,60 @@ async function renderGerenciamentoProtocolos(req, res, {
     fieldErrors,
     errorProtocolId,
     undoProtocol: req.session.ultimaEdicaoProtocolo || null
+  });
+}
+
+function criterioDaRecomendacao(chave) {
+  const criterios = {
+    gestacaoMultipla: 'Exibida quando a resposta for “Sim”.',
+    condicoesSaude: 'Exibida quando houver uma condição de saúde diferente de “Nenhuma”.',
+    condicoesAtuais: 'Exibida quando houver uma condição atual diferente de “Nenhuma”.',
+    complicacoesAnteriores: 'Exibida quando houver uma complicação anterior informada.',
+    usoSubstancias: 'Exibida quando a resposta for “Sim”.',
+    medicamentoSemOrientacao: 'Exibida quando a resposta for “Sim”.',
+    sangramento: 'Exibida quando a resposta for diferente de “Não”.',
+    perdaLiquido: 'Exibida quando a resposta for “Sim”.',
+    dorAbdominalForte: 'Exibida quando a resposta for “Sim”.',
+    sintomasPressaoAlta: 'Exibida quando a resposta for “Sim”.',
+    sintomaGrave: 'Exibida quando a resposta for “Sim”.',
+    movimentosReduzidos: 'Exibida quando a resposta for “Sim”.',
+    febre: 'Exibida quando a resposta for “Sim”.'
+  };
+
+  return criterios[chave] || 'Exibida quando a resposta indicar necessidade de acompanhamento.';
+}
+
+async function renderGerenciamentoQuestionarios(req, res, {
+  error = null,
+  success = null,
+  formValues = null,
+  fieldErrors = {},
+  errorQuestionId = null,
+  status = 200
+} = {}) {
+  const questoes = await getQuestoesAvaliacaoRisco();
+  const questoesComValores = formValues
+    ? questoes.map((questao) => (
+      questao.id_pergunta === Number(formValues.idPergunta)
+        ? {
+          ...questao,
+          pergunta: formValues.pergunta,
+          recomendacao: formValues.recomendacao
+        }
+        : questao
+    ))
+    : questoes;
+
+  return res.status(status).render('adminGerenciarQuestionarios', {
+    user: req.session.user,
+    questoes: questoesComValores.map((questao) => ({
+      ...questao,
+      criterio: criterioDaRecomendacao(questao.chave)
+    })),
+    error,
+    success,
+    fieldErrors,
+    errorQuestionId
   });
 }
 
@@ -522,6 +579,66 @@ exports.desfazerAtualizacaoProtocoloAdmin = async (req, res) => {
 
   delete req.session.ultimaEdicaoProtocolo;
   return res.redirect('/admin/exames-protocolos?sucesso=desfeito');
+};
+
+exports.questionariosAdmin = async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  if (req.session.user.role !== 'admin') {
+    return res.status(403).send('Acesso restrito a administradores.');
+  }
+
+  return renderGerenciamentoQuestionarios(req, res, {
+    error: req.query.erro === 'dados-invalidos'
+      ? 'Preencha a pergunta e a recomendação para salvar.'
+      : req.query.erro === 'nao-encontrado'
+        ? 'Essa pergunta não foi encontrada.'
+        : req.query.erro === 'salvar'
+          ? 'Não foi possível salvar as alterações. Tente novamente.'
+          : null,
+    success: req.query.sucesso === '1'
+      ? 'Pergunta e recomendação atualizadas com sucesso.'
+      : null
+  });
+};
+
+exports.atualizarQuestionarioAdmin = async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/login');
+  }
+
+  if (req.session.user.role !== 'admin') {
+    return res.status(403).send('Acesso restrito a administradores.');
+  }
+
+  const idPergunta = Number(req.params.idPergunta);
+  if (!Number.isInteger(idPergunta) || idPergunta <= 0) {
+    return res.redirect('/admin/questionarios?erro=nao-encontrado');
+  }
+
+  const questao = await getQuestaoAvaliacaoRiscoById(idPergunta);
+  if (!questao) {
+    return res.redirect('/admin/questionarios?erro=nao-encontrado');
+  }
+
+  const resultado = await atualizarQuestaoAvaliacaoRisco(idPergunta, req.body);
+  if (!resultado.success) {
+    const mensagens = {
+      'dados-invalidos': 'Revise os campos indicados para salvar a pergunta.',
+      salvar: 'Não foi possível salvar as alterações. Tente novamente.'
+    };
+    return renderGerenciamentoQuestionarios(req, res, {
+      status: 400,
+      error: mensagens[resultado.error] || 'Não foi possível salvar as alterações.',
+      fieldErrors: resultado.fieldErrors || {},
+      errorQuestionId: idPergunta,
+      formValues: { ...req.body, idPergunta }
+    });
+  }
+
+  return res.redirect('/admin/questionarios?sucesso=1');
 };
 
 exports.ajuda = (req, res) => {

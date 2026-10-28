@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS protocolos_medicos (
     titulo VARCHAR(100) NOT NULL,
     descricao TEXT,
     semana_inicio INT NOT NULL,
-    semana_fim INT NOT NULL
+    semana_fim INT NOT NULL,
+    INDEX idx_protocolos_periodo (semana_inicio, semana_fim)
 ) ;
 
 CREATE TABLE IF NOT EXISTS acompanhamento_prenatal (
@@ -74,6 +75,21 @@ CREATE TABLE IF NOT EXISTS acompanhamento_prenatal (
         FOREIGN KEY (id_gestante) REFERENCES gestantes(id_gestante) 
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ;
+
+CREATE TABLE IF NOT EXISTS protocolos_realizados (
+    id_realizacao INT AUTO_INCREMENT PRIMARY KEY,
+    id_gestante INT NOT NULL,
+    id_protocolo INT NOT NULL,
+    concluido_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_protocolo_realizado (id_gestante, id_protocolo),
+    INDEX idx_protocolos_realizados_gestante (id_gestante, concluido_em),
+    CONSTRAINT fk_protocolos_realizados_gestante
+        FOREIGN KEY (id_gestante) REFERENCES gestantes(id_gestante)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_protocolos_realizados_protocolo
+        FOREIGN KEY (id_protocolo) REFERENCES protocolos_medicos(id_protocolo)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
 
 CREATE TABLE IF NOT EXISTS agenda_gestante (
     id_agenda INT AUTO_INCREMENT PRIMARY KEY,
